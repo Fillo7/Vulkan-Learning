@@ -19,8 +19,9 @@ int main(int argc, char* argv[])
     VulkanLearning::SdlWindow window("Part 1", 1280, 720);
     SDL_Event event;
 
-    VulkanLearning::VulkanInstance vulkanInstance("Part 1");
+    VulkanLearning::VulkanInstance vulkanInstance("Part 1", { "VK_LAYER_LUNARG_standard_validation" }, { "VK_EXT_debug_report" });
     vulkanInstance.printExtensions(std::cout);
+    std::vector<VkPhysicalDevice> devices = vulkanInstance.getPhysicalDevices();
 
     while (!quit)
     {

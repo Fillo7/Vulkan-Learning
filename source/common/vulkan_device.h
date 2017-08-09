@@ -13,40 +13,38 @@ namespace VulkanLearning
 class VulkanDevice
 {
 public:
-    explicit VulkanDevice(const VkPhysicalDevice physicalDevice) :
-        physicalDevice(physicalDevice)
+    explicit VulkanDevice(const VkPhysicalDevice physicalDevice, const VkQueueFlagBits queueFlags) :
+        physicalDevice(physicalDevice),
+        queueFlags(queueFlags)
     {
-        VkPhysicalDeviceFeatures physicalDeviceFeatures;
-        vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
-        uint32_t queueFamilyPropertiesCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertiesCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
-        std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyPropertiesCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertiesCount, queueFamilyProperties.data());
+        uint32_t queueCount = 0;
 
-        uint32_t computeQueueFamilyCount = 0;
-
-        for (uint32_t i = 0; i < queueFamilyProperties.size(); i++)
+        for (uint32_t i = 0; i < queueFamilies.size(); i++)
         {
-            if (VK_QUEUE_COMPUTE_BIT & queueFamilyProperties.at(i).queueFlags)
+            if (queueFamilies.at(i).queueCount > 0 && queueFamilies.at(i).queueFlags & queueFlags)
             {
-                computeQueueFamilyCount++;
-                computeQueueIndices.push_back(i);
+                queueCount++;
+                queueIndices.push_back(i);
             }
         }
 
-        if (computeQueueFamilyCount == 0)
+        if (queueCount == 0)
         {
-            throw std::runtime_error("Current device does not have any compute queues available");
+            throw std::runtime_error("Current device does not have any suitable queues available");
         }
 
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(computeQueueFamilyCount);
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(queueCount);
         size_t currentQueueIndex = 0;
 
-        for (uint32_t i = 0; i < queueFamilyProperties.size(); i++)
+        for (uint32_t i = 0; i < queueFamilies.size(); i++)
         {
-            if (VK_QUEUE_COMPUTE_BIT & queueFamilyProperties[i].queueFlags)
+            if (queueFamilies[i].queueFlags & queueFlags)
             {
                 const float queuePriority = 1.0f;
 
@@ -100,20 +98,26 @@ public:
         return physicalDevice;
     }
 
+    VkQueueFlagBits getQueueFlags() const
+    {
+        return queueFlags;
+    }
+
     VkDevice getDevice() const
     {
         return device;
     }
 
-    std::vector<uint32_t> getComputeQueueIndices() const
+    std::vector<uint32_t> getQueueIndices() const
     {
-        return computeQueueIndices;
+        return queueIndices;
     }
 
 private:
     VkPhysicalDevice physicalDevice;
+    VkQueueFlagBits queueFlags;
     VkDevice device;
-    std::vector<uint32_t> computeQueueIndices;
+    std::vector<uint32_t> queueIndices;
 };
 
 } // namespace VulkanLearning
