@@ -13,7 +13,8 @@ namespace VulkanLearning
 class VulkanDevice
 {
 public:
-    explicit VulkanDevice(const VkPhysicalDevice physicalDevice, const VkQueueFlagBits queueFlags) :
+    explicit VulkanDevice(const VkPhysicalDevice physicalDevice, const VkQueueFlagBits queueFlags,
+        const std::vector<const char*>& validationLayers, const VkSurfaceKHR surface = nullptr) :
         physicalDevice(physicalDevice),
         queueFlags(queueFlags)
     {
@@ -23,61 +24,63 @@ public:
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
-        uint32_t queueCount = 0;
+        bool queueFound = false;
 
         for (uint32_t i = 0; i < queueFamilies.size(); i++)
         {
+            if (surface != nullptr)
+            {
+                VkBool32 surfaceSupport;
+                checkVulkanError(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &surfaceSupport),
+                    "vkGetPhysicalDeviceSurfaceSupportKHR");
+
+                if (!surfaceSupport)
+                {
+                    continue;
+                }
+            }
+
             if (queueFamilies.at(i).queueCount > 0 && queueFamilies.at(i).queueFlags & queueFlags)
             {
-                queueCount++;
-                queueIndices.push_back(i);
+                queueFamilyIndex = i;
+                queueFound = true;
+                break;
             }
         }
 
-        if (queueCount == 0)
+        if (!queueFound)
         {
             throw std::runtime_error("Current device does not have any suitable queues available");
         }
 
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(queueCount);
-        size_t currentQueueIndex = 0;
-
-        for (uint32_t i = 0; i < queueFamilies.size(); i++)
+        const VkPhysicalDeviceFeatures deviceFeatures = {};
+        const float queuePriority = 1.0f;
+        const VkDeviceQueueCreateInfo deviceQueueCreateInfo =
         {
-            if (queueFamilies[i].queueFlags & queueFlags)
-            {
-                const float queuePriority = 1.0f;
-
-                const VkDeviceQueueCreateInfo deviceQueueCreateInfo =
-                {
-                    VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-                    nullptr,
-                    0,
-                    i,
-                    1,
-                    &queuePriority
-                };
-
-                queueCreateInfos.at(currentQueueIndex) = deviceQueueCreateInfo;
-                currentQueueIndex++;
-            }
-        }
+            VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            nullptr,
+            0,
+            queueFamilyIndex,
+            1,
+            &queuePriority
+        };
 
         const VkDeviceCreateInfo deviceCreateInfo =
         {
             VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             nullptr,
             0,
-            static_cast<uint32_t>(queueCreateInfos.size()),
-            queueCreateInfos.data(),
+            1,
+            &deviceQueueCreateInfo,
+            static_cast<uint32_t>(validationLayers.size()),
+            validationLayers.data(),
             0,
             nullptr,
-            0,
-            nullptr,
-            nullptr
+            &deviceFeatures
         };
 
         checkVulkanError(vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device), "vkCreateDevice");
+        vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
     }
 
     ~VulkanDevice()
@@ -108,16 +111,22 @@ public:
         return device;
     }
 
-    std::vector<uint32_t> getQueueIndices() const
+    uint32_t getQueueFamilyIndex() const
     {
-        return queueIndices;
+        return queueFamilyIndex;
+    }
+
+    VkQueue getQueue() const
+    {
+        return queue;
     }
 
 private:
     VkPhysicalDevice physicalDevice;
     VkQueueFlagBits queueFlags;
     VkDevice device;
-    std::vector<uint32_t> queueIndices;
+    uint32_t queueFamilyIndex;
+    VkQueue queue;
 };
 
 } // namespace VulkanLearning

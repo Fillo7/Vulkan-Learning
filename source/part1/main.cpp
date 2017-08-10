@@ -3,13 +3,16 @@
 #include <iostream>
 
 // Library headers
+#define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 #include "SDL2/SDL.h"
 
 // Project header
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
+#include "common/vulkan_device.h"
 #include "common/vulkan_instance.h"
+#include "common/vulkan_surface.h"
 #include "common/vulkan_utility.h"
 
 int main(int argc, char* argv[])
@@ -19,9 +22,19 @@ int main(int argc, char* argv[])
     VulkanLearning::SdlWindow window("Part 1", 1280, 720);
     SDL_Event event;
 
-    VulkanLearning::VulkanInstance vulkanInstance("Part 1", { "VK_LAYER_LUNARG_standard_validation" }, { "VK_EXT_debug_report" });
+    VulkanLearning::VulkanInstance vulkanInstance("Part 1", { "VK_LAYER_LUNARG_standard_validation" }, { "VK_KHR_surface", "VK_KHR_win32_surface",
+        "VK_EXT_debug_report" });
     vulkanInstance.printExtensions(std::cout);
     std::vector<VkPhysicalDevice> devices = vulkanInstance.getPhysicalDevices();
+
+    if (devices.size() == 0)
+    {
+        return -1;
+    }
+
+    VulkanLearning::VulkanSurface vulkanSurface(vulkanInstance.getInstance(), window.getWindow());
+    VulkanLearning::VulkanDevice vulkanDevice(devices.at(0), VK_QUEUE_GRAPHICS_BIT, { "VK_LAYER_LUNARG_standard_validation" },
+        vulkanSurface.getSurface());
 
     while (!quit)
     {
