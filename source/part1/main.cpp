@@ -3,9 +3,9 @@
 #include <iostream>
 
 // Library headers
+#include "SDL2/SDL.h"
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
-#include "SDL2/SDL.h"
 
 // Project header
 #include "common/sdl_instance.h"
@@ -13,6 +13,7 @@
 #include "common/vulkan_device.h"
 #include "common/vulkan_instance.h"
 #include "common/vulkan_surface.h"
+#include "common/vulkan_swap_chain.h"
 #include "common/vulkan_utility.h"
 
 int main(int argc, char* argv[])
@@ -34,7 +35,9 @@ int main(int argc, char* argv[])
 
     VulkanLearning::VulkanSurface vulkanSurface(vulkanInstance.getInstance(), window.getWindow());
     VulkanLearning::VulkanDevice vulkanDevice(devices.at(0), VK_QUEUE_GRAPHICS_BIT, { "VK_LAYER_LUNARG_standard_validation" },
-        vulkanSurface.getSurface());
+        { "VK_KHR_swapchain" }, vulkanSurface.getSurface());
+    VulkanLearning::VulkanSwapChain vulkanSwapChain(vulkanDevice.getDevice(), vulkanSurface.getSurface(), vulkanDevice.getVulkanSwapChainInfo(),
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     while (!quit)
     {

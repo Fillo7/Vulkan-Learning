@@ -3,10 +3,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "vulkan/vulkan.h"
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_syswm.h"
-
+#include "vulkan/vulkan.h"
 #include "vulkan_utility.h"
 
 namespace VulkanLearning

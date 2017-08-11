@@ -26,8 +26,20 @@ public:
         return window;
     }
 
+    int getWidth() const
+    {
+        return width;
+    }
+
+    int getHeight() const
+    {
+        return height;
+    }
+
 private:
     SDL_Window* window;
+    int width;
+    int height;
 };
 
 } // namespace VulkanLearning
