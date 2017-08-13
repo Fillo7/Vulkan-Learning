@@ -52,22 +52,17 @@ public:
         };
 
         checkVulkanError(vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain), "vkCreateSwapchainKHR");
+        initializeSwapChainImages();
     }
 
     ~VulkanSwapChain()
     {
+        for (size_t i = 0; i < imageViews.size(); i++)
+        {
+            vkDestroyImageView(device, imageViews.at(i), nullptr);
+        }
+
         vkDestroySwapchainKHR(device, swapChain, nullptr);
-    }
-
-    std::vector<VkImage> getSwapChainImages() const
-    {
-        uint32_t imageCount;
-        checkVulkanError(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr), "vkGetSwapchainImagesKHR");
-
-        std::vector<VkImage> swapChainImages(imageCount);
-        checkVulkanError(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data()), "vkGetSwapchainImagesKHR");
-
-        return swapChainImages;
     }
 
     VkDevice getDevice() const
@@ -95,12 +90,24 @@ public:
         return extent;
     }
 
+    std::vector<VkImage> getSwapChainImages() const
+    {
+        return swapChainImages;
+    }
+
+    std::vector<VkImageView> getImageViews() const
+    {
+        return imageViews;
+    }
+
 private:
     VkDevice device;
     VkSurfaceKHR surface;
     VkSwapchainKHR swapChain;
     VkSurfaceFormatKHR surfaceFormat;
     VkExtent2D extent;
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView> imageViews;
 
     VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const
     {
@@ -142,6 +149,46 @@ private:
     VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     {
         return capabilities.currentExtent;
+    }
+
+    void initializeSwapChainImages()
+    {
+        uint32_t imageCount;
+        checkVulkanError(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr), "vkGetSwapchainImagesKHR");
+
+        swapChainImages.resize(imageCount);
+        checkVulkanError(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data()), "vkGetSwapchainImagesKHR");
+
+        imageViews.resize(imageCount);
+        for (size_t i = 0; i < swapChainImages.size(); i++)
+        {
+            const VkImageViewCreateInfo imageViewCreateInfo =
+            {
+                VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                nullptr,
+                0,
+                swapChainImages.at(i),
+                VK_IMAGE_VIEW_TYPE_2D,
+                surfaceFormat.format,
+                VkComponentMapping
+                {
+                    VK_COMPONENT_SWIZZLE_IDENTITY,
+                    VK_COMPONENT_SWIZZLE_IDENTITY,
+                    VK_COMPONENT_SWIZZLE_IDENTITY,
+                    VK_COMPONENT_SWIZZLE_IDENTITY
+                },
+                VkImageSubresourceRange
+                {
+                    VK_IMAGE_ASPECT_COLOR_BIT,
+                    0,
+                    1,
+                    0,
+                    1
+                }
+            };
+
+            checkVulkanError(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageViews.at(i)), "vkCreateImageView");
+        }
     }
 };
 
