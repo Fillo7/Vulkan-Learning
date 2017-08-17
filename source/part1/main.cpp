@@ -7,11 +7,13 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 
-// Project header
+// Project headers
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
 #include "common/vulkan_device.h"
 #include "common/vulkan_instance.h"
+#include "common/vulkan_pipeline.h"
+#include "common/vulkan_shader_module.h"
 #include "common/vulkan_surface.h"
 #include "common/vulkan_swap_chain.h"
 #include "common/vulkan_utility.h"
@@ -38,6 +40,8 @@ int main(int argc, char* argv[])
         { "VK_KHR_swapchain" }, vulkanSurface.getSurface());
     VulkanLearning::VulkanSwapChain vulkanSwapChain(vulkanDevice.getDevice(), vulkanSurface.getSurface(), vulkanDevice.getVulkanSwapChainInfo(),
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VulkanLearning::VulkanShaderModule vertexShader(vulkanDevice.getDevice(), "part1_vert.spv");
+    VulkanLearning::VulkanShaderModule fragmentShader(vulkanDevice.getDevice(), "part1_frag.spv");
 
     while (!quit)
     {
