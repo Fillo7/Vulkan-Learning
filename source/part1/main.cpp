@@ -13,6 +13,7 @@
 #include "common/vulkan_device.h"
 #include "common/vulkan_instance.h"
 #include "common/vulkan_pipeline.h"
+#include "common/vulkan_render_pass.h"
 #include "common/vulkan_shader_module.h"
 #include "common/vulkan_surface.h"
 #include "common/vulkan_swap_chain.h"
@@ -42,6 +43,9 @@ int main(int argc, char* argv[])
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VulkanLearning::VulkanShaderModule vertexShader(vulkanDevice.getDevice(), "part1_vert.spv");
     VulkanLearning::VulkanShaderModule fragmentShader(vulkanDevice.getDevice(), "part1_frag.spv");
+    VulkanLearning::VulkanRenderPass renderPass(vulkanDevice.getDevice(), vulkanSwapChain.getSurfaceFormat().format);
+    VulkanLearning::VulkanPipeline graphicsPipeline(vulkanDevice.getDevice(), renderPass.getRenderPass(), vertexShader.getShaderModule(),
+        fragmentShader.getShaderModule(), vulkanSwapChain.getExtent());
 
     while (!quit)
     {
