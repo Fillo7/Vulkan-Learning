@@ -11,6 +11,7 @@
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
 #include "common/vulkan_device.h"
+#include "common/vulkan_framebuffer.h"
 #include "common/vulkan_instance.h"
 #include "common/vulkan_pipeline.h"
 #include "common/vulkan_render_pass.h"
@@ -46,6 +47,8 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanRenderPass renderPass(vulkanDevice.getDevice(), vulkanSwapChain.getSurfaceFormat().format);
     VulkanLearning::VulkanPipeline graphicsPipeline(vulkanDevice.getDevice(), renderPass.getRenderPass(), vertexShader.getShaderModule(),
         fragmentShader.getShaderModule(), vulkanSwapChain.getExtent());
+    VulkanLearning::VulkanFramebuffer framebuffer(vulkanDevice.getDevice(), renderPass.getRenderPass(), vulkanSwapChain.getExtent(),
+        vulkanSwapChain.getImageViews());
 
     while (!quit)
     {
