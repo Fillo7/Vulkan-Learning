@@ -10,6 +10,7 @@
 // Project headers
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
+#include "common/vulkan_command_buffer.h"
 #include "common/vulkan_device.h"
 #include "common/vulkan_framebuffer.h"
 #include "common/vulkan_instance.h"
@@ -49,6 +50,9 @@ int main(int argc, char* argv[])
         fragmentShader.getShaderModule(), vulkanSwapChain.getExtent());
     VulkanLearning::VulkanFramebuffer framebuffer(vulkanDevice.getDevice(), renderPass.getRenderPass(), vulkanSwapChain.getExtent(),
         vulkanSwapChain.getImageViews());
+    VulkanLearning::VulkanCommandBuffer commandBuffer(vulkanDevice.getDevice(), vulkanDevice.getQueueFamilyIndex(),
+        static_cast<uint32_t>(framebuffer.getFramebuffers().size()));
+    framebuffer.beginRenderPass(commandBuffer.getCommandBuffers(), graphicsPipeline.getPipeline());
 
     while (!quit)
     {

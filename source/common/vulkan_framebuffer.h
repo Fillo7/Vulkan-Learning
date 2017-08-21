@@ -15,7 +15,8 @@ public:
     explicit VulkanFramebuffer(const VkDevice device, const VkRenderPass renderPass, const VkExtent2D extent,
         const std::vector<VkImageView>& imageViews) :
         device(device),
-        renderPass(renderPass)
+        renderPass(renderPass),
+        extent(extent)
     {
         framebuffers.resize(imageViews.size());
 
@@ -46,6 +47,46 @@ public:
         }
     }
 
+    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, const VkPipeline pipeline)
+    {
+        for (size_t i = 0; i < commandBuffers.size(); i++)
+        {
+            const VkCommandBufferBeginInfo commandBufferBeginInfo =
+            {
+                VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                nullptr,
+                VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+                nullptr
+            };
+
+            checkVulkanError(vkBeginCommandBuffer(commandBuffers.at(i), &commandBufferBeginInfo), "vkBeginCommandBuffer");
+
+            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+
+            const VkRenderPassBeginInfo renderPassBeginInfo =
+            {
+                VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                nullptr,
+                renderPass,
+                framebuffers.at(i),
+                VkRect2D
+                {
+                    {0, 0},
+                    extent
+                },
+                1,
+                &clearColor
+            };
+
+            vkCmdBeginRenderPass(commandBuffers.at(i), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(commandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+            vkCmdDraw(commandBuffers.at(i), 3, 1, 0, 0);
+
+            vkCmdEndRenderPass(commandBuffers.at(i));
+            checkVulkanError(vkEndCommandBuffer(commandBuffers.at(i)), "vkEndCommandBuffer");
+        }
+    }
+
     VkDevice getDevice() const
     {
         return device;
@@ -64,6 +105,7 @@ public:
 private:
     VkDevice device;
     VkRenderPass renderPass;
+    VkExtent2D extent;
     std::vector<VkFramebuffer> framebuffers;
 };
 
