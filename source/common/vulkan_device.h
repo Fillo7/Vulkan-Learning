@@ -132,6 +132,45 @@ public:
         return info;
     }
 
+    void queueSubmit(VkCommandBuffer commandBuffer, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore)
+    {
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+        const VkSubmitInfo submitInfo =
+        {
+            VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            nullptr,
+            1,
+            &waitSemaphore,
+            waitStages,
+            1,
+            &commandBuffer,
+            1,
+            &signalSemaphore
+        };
+
+        checkVulkanError(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE), "vkQueueSubmit");
+    }
+
+    void queuePresent(VkSwapchainKHR swapChain, VkSemaphore waitSemaphore, const uint32_t imageIndex)
+    {
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+        const VkPresentInfoKHR presentInfo =
+        {
+            VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            nullptr,
+            1,
+            &waitSemaphore,
+            1,
+            &swapChain,
+            &imageIndex,
+            nullptr
+        };
+
+        vkQueuePresentKHR(queue, &presentInfo); // error checking not done on purpose
+    }
+
     VkPhysicalDevice getPhysicalDevice() const
     {
         return physicalDevice;

@@ -48,6 +48,17 @@ public:
             nullptr
         };
 
+        const VkSubpassDependency subpassDependency =
+        {
+            VK_SUBPASS_EXTERNAL,
+            0,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            0,
+            VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            0
+        };
+
         const VkRenderPassCreateInfo renderPassCreateInfo =
         {
             VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
@@ -57,8 +68,8 @@ public:
             &colorAttachment,
             1,
             &subpassDescription,
-            0,
-            nullptr
+            1,
+            &subpassDependency
         };
 
         checkVulkanError(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass), "vkCreateRenderPass");

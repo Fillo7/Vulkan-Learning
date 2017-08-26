@@ -1,6 +1,7 @@
 // Core headers
 #include <cstdint>
 #include <iostream>
+#include <limits>
 
 // Library headers
 #include "SDL2/SDL.h"
@@ -16,10 +17,29 @@
 #include "common/vulkan_instance.h"
 #include "common/vulkan_pipeline.h"
 #include "common/vulkan_render_pass.h"
+#include "common/vulkan_semaphore.h"
 #include "common/vulkan_shader_module.h"
 #include "common/vulkan_surface.h"
 #include "common/vulkan_swap_chain.h"
 #include "common/vulkan_utility.h"
+
+#ifdef max
+#undef max
+#endif
+
+void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanCommandBuffer commandBuffer)
+{
+    vkQueueWaitIdle(device.getQueue());
+
+    VulkanLearning::VulkanSemaphore imageReadySemaphore(device.getDevice());
+    VulkanLearning::VulkanSemaphore renderFinishedSemaphore(device.getDevice());
+
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(device.getDevice(), swapChain.getSwapChain(), std::numeric_limits<uint64_t>::max(), imageReadySemaphore.getSemaphore(),
+        VK_NULL_HANDLE, &imageIndex);
+    device.queueSubmit(commandBuffer.getCommandBuffers().at(imageIndex), imageReadySemaphore.getSemaphore(), renderFinishedSemaphore.getSemaphore());
+    device.queuePresent(swapChain.getSwapChain(), renderFinishedSemaphore.getSemaphore(), imageIndex);
+}
 
 int main(int argc, char* argv[])
 {
@@ -75,8 +95,11 @@ int main(int argc, char* argv[])
                 }
             }
         }
-        SDL_UpdateWindowSurface(window.getWindow());
+
+        draw(vulkanDevice, vulkanSwapChain, commandBuffer);
+        //SDL_UpdateWindowSurface(window.getWindow());
     }
 
+    vkDeviceWaitIdle(vulkanDevice.getDevice());
     return 0;
 }
