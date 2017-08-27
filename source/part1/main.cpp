@@ -27,10 +27,8 @@
 #undef max
 #endif
 
-void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanCommandBuffer commandBuffer)
+void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanCommandBuffer& commandBuffer)
 {
-    vkQueueWaitIdle(device.getQueue());
-
     VulkanLearning::VulkanSemaphore imageReadySemaphore(device.getDevice());
     VulkanLearning::VulkanSemaphore renderFinishedSemaphore(device.getDevice());
 

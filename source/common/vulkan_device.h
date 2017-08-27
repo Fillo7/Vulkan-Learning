@@ -169,6 +169,7 @@ public:
         };
 
         vkQueuePresentKHR(queue, &presentInfo); // error checking not done on purpose
+        vkQueueWaitIdle(queue);
     }
 
     VkPhysicalDevice getPhysicalDevice() const
