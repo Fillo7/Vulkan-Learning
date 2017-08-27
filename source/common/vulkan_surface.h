@@ -14,7 +14,7 @@ namespace VulkanLearning
 class VulkanSurface
 {
 public:
-    explicit VulkanSurface(const VkInstance instance, SDL_Window* window) :
+    explicit VulkanSurface(VkInstance instance, SDL_Window* window) :
         instance(instance)
     {
         SDL_SysWMinfo wmInfo;

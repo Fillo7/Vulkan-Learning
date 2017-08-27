@@ -39,16 +39,20 @@ void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain&
     device.queuePresent(swapChain.getSwapChain(), renderFinishedSemaphore.getSemaphore(), imageIndex);
 }
 
+void reloadSwapChain()
+{
+    // to do
+}
+
 int main(int argc, char* argv[])
 {
     bool quit = false;
     VulkanLearning::SdlInstance sdlInstance(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-    VulkanLearning::SdlWindow window("Part 1", 1280, 720);
+    VulkanLearning::SdlWindow window("Part 1", 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_Event event;
 
     VulkanLearning::VulkanInstance vulkanInstance("Part 1", { "VK_LAYER_LUNARG_standard_validation" }, { "VK_KHR_surface", "VK_KHR_win32_surface",
         "VK_EXT_debug_report" });
-    vulkanInstance.printExtensions(std::cout);
     std::vector<VkPhysicalDevice> devices = vulkanInstance.getPhysicalDevices();
 
     if (devices.size() == 0)
@@ -56,19 +60,18 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    VulkanLearning::VulkanSurface vulkanSurface(vulkanInstance.getInstance(), window.getWindow());
-    VulkanLearning::VulkanDevice vulkanDevice(devices.at(0), VK_QUEUE_GRAPHICS_BIT, { "VK_LAYER_LUNARG_standard_validation" },
-        { "VK_KHR_swapchain" }, vulkanSurface.getSurface());
-    VulkanLearning::VulkanSwapChain vulkanSwapChain(vulkanDevice.getDevice(), vulkanSurface.getSurface(), vulkanDevice.getVulkanSwapChainInfo(),
+    VulkanLearning::VulkanSurface surface(vulkanInstance.getInstance(), window.getWindow());
+    VulkanLearning::VulkanDevice device(devices.at(0), VK_QUEUE_GRAPHICS_BIT, { "VK_LAYER_LUNARG_standard_validation" },
+        { "VK_KHR_swapchain" }, surface.getSurface());
+    VulkanLearning::VulkanSwapChain swapChain(device.getDevice(), surface.getSurface(), device.getVulkanSwapChainInfo(),
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    VulkanLearning::VulkanShaderModule vertexShader(vulkanDevice.getDevice(), "part1_vert.spv");
-    VulkanLearning::VulkanShaderModule fragmentShader(vulkanDevice.getDevice(), "part1_frag.spv");
-    VulkanLearning::VulkanRenderPass renderPass(vulkanDevice.getDevice(), vulkanSwapChain.getSurfaceFormat().format);
-    VulkanLearning::VulkanPipeline graphicsPipeline(vulkanDevice.getDevice(), renderPass.getRenderPass(), vertexShader.getShaderModule(),
-        fragmentShader.getShaderModule(), vulkanSwapChain.getExtent());
-    VulkanLearning::VulkanFramebuffer framebuffer(vulkanDevice.getDevice(), renderPass.getRenderPass(), vulkanSwapChain.getExtent(),
-        vulkanSwapChain.getImageViews());
-    VulkanLearning::VulkanCommandBuffer commandBuffer(vulkanDevice.getDevice(), vulkanDevice.getQueueFamilyIndex(),
+    VulkanLearning::VulkanShaderModule vertexShader(device.getDevice(), "part1_vert.spv");
+    VulkanLearning::VulkanShaderModule fragmentShader(device.getDevice(), "part1_frag.spv");
+    VulkanLearning::VulkanRenderPass renderPass(device.getDevice(), swapChain.getSurfaceFormat().format);
+    VulkanLearning::VulkanPipeline graphicsPipeline(device.getDevice(), renderPass.getRenderPass(), vertexShader.getShaderModule(),
+        fragmentShader.getShaderModule(), swapChain.getExtent());
+    VulkanLearning::VulkanFramebuffer framebuffer(device.getDevice(), renderPass.getRenderPass(), swapChain.getExtent(), swapChain.getImageViews());
+    VulkanLearning::VulkanCommandBuffer commandBuffer(device.getDevice(), device.getQueueFamilyIndex(),
         static_cast<uint32_t>(framebuffer.getFramebuffers().size()));
     framebuffer.beginRenderPass(commandBuffer.getCommandBuffers(), graphicsPipeline.getPipeline());
 
@@ -79,6 +82,10 @@ int main(int argc, char* argv[])
             if (event.type == SDL_QUIT)
             {
                 quit = true;
+            }
+            else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+            {
+                reloadSwapChain();
             }
             else if (event.type == SDL_KEYDOWN)
             {
@@ -94,10 +101,8 @@ int main(int argc, char* argv[])
             }
         }
 
-        draw(vulkanDevice, vulkanSwapChain, commandBuffer);
-        //SDL_UpdateWindowSurface(window.getWindow());
+        draw(device, swapChain, commandBuffer);
     }
 
-    vkDeviceWaitIdle(vulkanDevice.getDevice());
     return 0;
 }

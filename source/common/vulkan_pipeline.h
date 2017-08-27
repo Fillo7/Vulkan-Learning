@@ -13,8 +13,8 @@ namespace VulkanLearning
 class VulkanPipeline
 {
 public:
-    explicit VulkanPipeline(const VkDevice device, const VkRenderPass renderPass, const VkShaderModule vertexShader,
-        const VkShaderModule fragmentShader, const VkExtent2D swapChainExtent) :
+    explicit VulkanPipeline(VkDevice device, VkRenderPass renderPass, VkShaderModule vertexShader, VkShaderModule fragmentShader,
+        const VkExtent2D& swapChainExtent) :
         device(device),
         vertexShader(vertexShader),
         fragmentShader(fragmentShader)

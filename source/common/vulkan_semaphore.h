@@ -12,7 +12,7 @@ namespace VulkanLearning
 class VulkanSemaphore
 {
 public:
-    explicit VulkanSemaphore(const VkDevice device) :
+    explicit VulkanSemaphore(VkDevice device) :
         device(device)
     {
         const VkSemaphoreCreateInfo semaphoreCreateInfo =

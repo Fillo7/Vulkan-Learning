@@ -12,7 +12,7 @@ namespace VulkanLearning
 class VulkanSwapChainInfo
 {
 public:
-    void setPhysicalDevice(const VkPhysicalDevice physicalDevice)
+    void setPhysicalDevice(VkPhysicalDevice physicalDevice)
     {
         this->physicalDevice = physicalDevice;
     }

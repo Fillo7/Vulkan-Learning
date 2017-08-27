@@ -12,7 +12,7 @@ namespace VulkanLearning
 class VulkanRenderPass
 {
 public:
-    explicit VulkanRenderPass(const VkDevice device, const VkFormat imageFormat) :
+    explicit VulkanRenderPass(VkDevice device, const VkFormat imageFormat) :
         device(device)
     {
         const VkAttachmentDescription colorAttachment =

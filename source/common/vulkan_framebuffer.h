@@ -12,7 +12,7 @@ namespace VulkanLearning
 class VulkanFramebuffer
 {
 public:
-    explicit VulkanFramebuffer(const VkDevice device, const VkRenderPass renderPass, const VkExtent2D extent,
+    explicit VulkanFramebuffer(VkDevice device, VkRenderPass renderPass, const VkExtent2D& extent,
         const std::vector<VkImageView>& imageViews) :
         device(device),
         renderPass(renderPass),

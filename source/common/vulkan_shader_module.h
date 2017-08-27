@@ -15,7 +15,7 @@ namespace VulkanLearning
 class VulkanShaderModule
 {
 public:
-    explicit VulkanShaderModule(const VkDevice device, const std::string& filePath) :
+    explicit VulkanShaderModule(VkDevice device, const std::string& filePath) :
         device(device)
     {
         std::string code = loadFileToString(filePath);

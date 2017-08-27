@@ -14,8 +14,8 @@ namespace VulkanLearning
 class VulkanDevice
 {
 public:
-    explicit VulkanDevice(const VkPhysicalDevice physicalDevice, const VkQueueFlagBits queueFlags,
-        const std::vector<const char*>& validationLayers, const std::vector<const char*>& extensions, const VkSurfaceKHR surface = nullptr) :
+    explicit VulkanDevice(VkPhysicalDevice physicalDevice, const VkQueueFlagBits queueFlags, const std::vector<const char*>& validationLayers,
+        const std::vector<const char*>& extensions, VkSurfaceKHR surface = nullptr) :
         physicalDevice(physicalDevice),
         queueFlags(queueFlags),
         surface(surface)

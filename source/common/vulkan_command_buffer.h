@@ -12,7 +12,7 @@ namespace VulkanLearning
 class VulkanCommandBuffer
 {
 public:
-    explicit VulkanCommandBuffer(const VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount) :
+    explicit VulkanCommandBuffer(VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount) :
         device(device)
     {
         const VkCommandPoolCreateInfo commandPoolCreateInfo =
