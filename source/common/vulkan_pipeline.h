@@ -19,6 +19,59 @@ public:
         vertexShader(vertexShader),
         fragmentShader(fragmentShader)
     {
+        initializePipeline(renderPass, swapChainExtent);
+    }
+
+    ~VulkanPipeline()
+    {
+        destroyPipeline();
+    }
+
+    void destroyPipeline()
+    {
+        vkDestroyPipeline(device, pipeline, nullptr);
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    }
+
+    void reloadPipeline(VkRenderPass renderPass, const VkExtent2D& swapChainExtent)
+    {
+        initializePipeline(renderPass, swapChainExtent);
+    }
+
+    VkDevice getDevice() const
+    {
+        return device;
+    }
+
+    VkShaderModule getVertexShader() const
+    {
+        return vertexShader;
+    }
+
+    VkShaderModule getFragmentShader() const
+    {
+        return vertexShader;
+    }
+
+    VkPipelineLayout getPipelineLayout() const
+    {
+        return pipelineLayout;
+    }
+
+    VkPipeline getPipeline() const
+    {
+        return pipeline;
+    }
+
+private:
+    VkDevice device;
+    VkShaderModule vertexShader;
+    VkShaderModule fragmentShader;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
+
+    void initializePipeline(VkRenderPass renderPass, const VkExtent2D& swapChainExtent)
+    {
         const VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo =
         {
             VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -183,44 +236,6 @@ public:
         checkVulkanError(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineInfo, nullptr, &pipeline),
             "vkCreateGraphicsPipelines");
     }
-
-    ~VulkanPipeline()
-    {
-        vkDestroyPipeline(device, pipeline, nullptr);
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-    }
-
-    VkDevice getDevice() const
-    {
-        return device;
-    }
-
-    VkShaderModule getVertexShader() const
-    {
-        return vertexShader;
-    }
-
-    VkShaderModule getFragmentShader() const
-    {
-        return vertexShader;
-    }
-
-    VkPipelineLayout getPipelineLayout() const
-    {
-        return pipelineLayout;
-    }
-
-    VkPipeline getPipeline() const
-    {
-        return pipeline;
-    }
-
-private:
-    VkDevice device;
-    VkShaderModule vertexShader;
-    VkShaderModule fragmentShader;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
 };
 
 } // namespace VulkanLearning

@@ -16,46 +16,19 @@ public:
     explicit VulkanSwapChain(VkDevice device, VkSurfaceKHR surface, const VulkanSwapChainInfo& swapChainInfo,
         const VkImageUsageFlags imageUsageFlags) :
         device(device),
-        surface(surface)
+        surface(surface),
+        swapChainInfo(swapChainInfo),
+        imageUsageFlags(imageUsageFlags)
     {
-        surfaceFormat = chooseSurfaceFormat(swapChainInfo.getSurfaceFormats());
-        VkPresentModeKHR presentMode = choosePresentMode(swapChainInfo.getPresentModes());
-        VkSurfaceCapabilitiesKHR surfaceCapabilities = swapChainInfo.getSurfaceCapabilities();
-        extent = chooseExtent(surfaceCapabilities);
-
-        uint32_t imageCount = surfaceCapabilities.minImageCount + 1;
-        if (surfaceCapabilities.maxImageCount > 0 && imageCount > surfaceCapabilities.maxImageCount)
-        {
-            imageCount = surfaceCapabilities.maxImageCount;
-        }
-
-        const VkSwapchainCreateInfoKHR swapChainCreateInfo =
-        {
-            VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-            nullptr,
-            0,
-            surface,
-            imageCount,
-            surfaceFormat.format,
-            surfaceFormat.colorSpace,
-            extent,
-            1,
-            imageUsageFlags,
-            VK_SHARING_MODE_EXCLUSIVE,
-            0,
-            nullptr,
-            surfaceCapabilities.currentTransform,
-            VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-            presentMode,
-            VK_TRUE,
-            VK_NULL_HANDLE
-        };
-
-        checkVulkanError(vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain), "vkCreateSwapchainKHR");
-        initializeSwapChainImages();
+        initializeSwapChain(swapChainInfo, chooseExtent(swapChainInfo.getSurfaceCapabilities()), imageUsageFlags);
     }
 
     ~VulkanSwapChain()
+    {
+        destroySwapChain();
+    }
+
+    void destroySwapChain()
     {
         for (size_t i = 0; i < imageViews.size(); i++)
         {
@@ -63,6 +36,11 @@ public:
         }
 
         vkDestroySwapchainKHR(device, swapChain, nullptr);
+    }
+
+    void reloadSwapChain(VkExtent2D& extent)
+    {
+        initializeSwapChain(swapChainInfo, extent, imageUsageFlags);
     }
 
     VkDevice getDevice() const
@@ -104,10 +82,13 @@ private:
     VkDevice device;
     VkSurfaceKHR surface;
     VkSwapchainKHR swapChain;
+    VkSwapchainKHR helperSwapChain;
     VkSurfaceFormatKHR surfaceFormat;
     VkExtent2D extent;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> imageViews;
+    VulkanSwapChainInfo swapChainInfo;
+    VkImageUsageFlags imageUsageFlags;
 
     VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const
     {
@@ -189,6 +170,45 @@ private:
 
             checkVulkanError(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageViews.at(i)), "vkCreateImageView");
         }
+    }
+
+    void initializeSwapChain(const VulkanSwapChainInfo& swapChainInfo, VkExtent2D& extent, const VkImageUsageFlags imageUsageFlags)
+    {
+        surfaceFormat = chooseSurfaceFormat(swapChainInfo.getSurfaceFormats());
+        VkPresentModeKHR presentMode = choosePresentMode(swapChainInfo.getPresentModes());
+        VkSurfaceCapabilitiesKHR surfaceCapabilities = swapChainInfo.getSurfaceCapabilities();
+        this->extent = extent;
+
+        uint32_t imageCount = surfaceCapabilities.minImageCount + 1;
+        if (surfaceCapabilities.maxImageCount > 0 && imageCount > surfaceCapabilities.maxImageCount)
+        {
+            imageCount = surfaceCapabilities.maxImageCount;
+        }
+
+        VkSwapchainCreateInfoKHR swapChainCreateInfo =
+        {
+            VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+            nullptr,
+            0,
+            surface,
+            imageCount,
+            surfaceFormat.format,
+            surfaceFormat.colorSpace,
+            extent,
+            1,
+            imageUsageFlags,
+            VK_SHARING_MODE_EXCLUSIVE,
+            0,
+            nullptr,
+            surfaceCapabilities.currentTransform,
+            VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+            presentMode,
+            VK_TRUE,
+            VK_NULL_HANDLE
+        };
+
+        checkVulkanError(vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain), "vkCreateSwapchainKHR");
+        initializeSwapChainImages();
     }
 };
 

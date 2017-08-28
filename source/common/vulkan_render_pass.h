@@ -15,6 +15,40 @@ public:
     explicit VulkanRenderPass(VkDevice device, const VkFormat imageFormat) :
         device(device)
     {
+        initializeRenderPass(imageFormat);
+    }
+
+    ~VulkanRenderPass()
+    {
+        destroyRenderPass();
+    }
+
+    void destroyRenderPass()
+    {
+        vkDestroyRenderPass(device, renderPass, nullptr);
+    }
+
+    void reloadRenderPass(const VkFormat imageFormat)
+    {
+        initializeRenderPass(imageFormat);
+    }
+
+    VkDevice getDevice() const
+    {
+        return device;
+    }
+
+    VkRenderPass getRenderPass() const
+    {
+        return renderPass;
+    }
+
+private:
+    VkDevice device;
+    VkRenderPass renderPass;
+
+    void initializeRenderPass(const VkFormat imageFormat)
+    {
         const VkAttachmentDescription colorAttachment =
         {
             0,
@@ -74,25 +108,6 @@ public:
 
         checkVulkanError(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass), "vkCreateRenderPass");
     }
-
-    ~VulkanRenderPass()
-    {
-        vkDestroyRenderPass(device, renderPass, nullptr);
-    }
-
-    VkDevice getDevice() const
-    {
-        return device;
-    }
-
-    VkRenderPass getRenderPass() const
-    {
-        return renderPass;
-    }
-
-private:
-    VkDevice device;
-    VkRenderPass renderPass;
 };
 
 } // namespace VulkanLearning

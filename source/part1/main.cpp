@@ -11,9 +11,9 @@
 // Project headers
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
-#include "common/vulkan_command_buffer.h"
+#include "common/vulkan_command_buffer_group.h"
 #include "common/vulkan_device.h"
-#include "common/vulkan_framebuffer.h"
+#include "common/vulkan_framebuffer_group.h"
 #include "common/vulkan_instance.h"
 #include "common/vulkan_pipeline.h"
 #include "common/vulkan_render_pass.h"
@@ -27,7 +27,7 @@
 #undef max
 #endif
 
-void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanCommandBuffer& commandBuffer)
+void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanCommandBufferGroup& commandBuffers)
 {
     VulkanLearning::VulkanSemaphore imageReadySemaphore(device.getDevice());
     VulkanLearning::VulkanSemaphore renderFinishedSemaphore(device.getDevice());
@@ -35,13 +35,30 @@ void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain&
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device.getDevice(), swapChain.getSwapChain(), std::numeric_limits<uint64_t>::max(), imageReadySemaphore.getSemaphore(),
         VK_NULL_HANDLE, &imageIndex);
-    device.queueSubmit(commandBuffer.getCommandBuffers().at(imageIndex), imageReadySemaphore.getSemaphore(), renderFinishedSemaphore.getSemaphore());
+    device.queueSubmit(commandBuffers.getCommandBuffers().at(imageIndex), imageReadySemaphore.getSemaphore(),
+        renderFinishedSemaphore.getSemaphore());
     device.queuePresent(swapChain.getSwapChain(), renderFinishedSemaphore.getSemaphore(), imageIndex);
 }
 
-void reloadSwapChain()
+void reloadSwapChain(VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanFramebufferGroup& framebuffers,
+    VulkanLearning::VulkanCommandBufferGroup& commandBuffers, VulkanLearning::VulkanRenderPass& renderPass, VulkanLearning::VulkanPipeline& pipeline,
+    uint32_t width, uint32_t height)
 {
-    // to do
+    framebuffers.destroyFramebuffers();
+    commandBuffers.destroyCommandBuffers();
+    pipeline.destroyPipeline();
+    renderPass.destroyRenderPass();
+    swapChain.destroySwapChain();
+
+    VkExtent2D newExtent = {width, height};
+
+    swapChain.reloadSwapChain(newExtent);
+    renderPass.reloadRenderPass(swapChain.getSurfaceFormat().format);
+    pipeline.reloadPipeline(renderPass.getRenderPass(), newExtent);
+    framebuffers.reloadFramebuffers(renderPass.getRenderPass(), newExtent, swapChain.getImageViews());
+    commandBuffers.reloadCommandBuffers();
+
+    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), pipeline.getPipeline());
 }
 
 int main(int argc, char* argv[])
@@ -70,10 +87,11 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanRenderPass renderPass(device.getDevice(), swapChain.getSurfaceFormat().format);
     VulkanLearning::VulkanPipeline graphicsPipeline(device.getDevice(), renderPass.getRenderPass(), vertexShader.getShaderModule(),
         fragmentShader.getShaderModule(), swapChain.getExtent());
-    VulkanLearning::VulkanFramebuffer framebuffer(device.getDevice(), renderPass.getRenderPass(), swapChain.getExtent(), swapChain.getImageViews());
-    VulkanLearning::VulkanCommandBuffer commandBuffer(device.getDevice(), device.getQueueFamilyIndex(),
-        static_cast<uint32_t>(framebuffer.getFramebuffers().size()));
-    framebuffer.beginRenderPass(commandBuffer.getCommandBuffers(), graphicsPipeline.getPipeline());
+    VulkanLearning::VulkanFramebufferGroup framebuffers(device.getDevice(), renderPass.getRenderPass(), swapChain.getExtent(),
+        swapChain.getImageViews());
+    VulkanLearning::VulkanCommandBufferGroup commandBuffers(device.getDevice(), device.getQueueFamilyIndex(),
+        static_cast<uint32_t>(framebuffers.getFramebuffers().size()));
+    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline());
 
     while (!quit)
     {
@@ -85,7 +103,13 @@ int main(int argc, char* argv[])
             }
             else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                reloadSwapChain();
+                int newWidth;
+                int newHeight;
+                SDL_GetWindowSize(window.getWindow(), &newWidth, &newHeight);
+
+                vkDeviceWaitIdle(device.getDevice());
+                reloadSwapChain(swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, static_cast<uint32_t>(newWidth),
+                    static_cast<uint32_t>(newHeight));
             }
             else if (event.type == SDL_KEYDOWN)
             {
@@ -101,7 +125,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        draw(device, swapChain, commandBuffer);
+        draw(device, swapChain, commandBuffers);
     }
 
     return 0;

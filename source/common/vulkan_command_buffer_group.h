@@ -9,10 +9,10 @@
 namespace VulkanLearning
 {
 
-class VulkanCommandBuffer
+class VulkanCommandBufferGroup
 {
 public:
-    explicit VulkanCommandBuffer(VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount) :
+    explicit VulkanCommandBufferGroup(VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount) :
         device(device)
     {
         const VkCommandPoolCreateInfo commandPoolCreateInfo =
@@ -38,9 +38,28 @@ public:
         checkVulkanError(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data()), "vkAllocateCommandBuffers");
     }
 
-    ~VulkanCommandBuffer()
+    ~VulkanCommandBufferGroup()
     {
         vkDestroyCommandPool(device, commandPool, nullptr);
+    }
+
+    void destroyCommandBuffers()
+    {
+        vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    }
+
+    void reloadCommandBuffers()
+    {
+        const VkCommandBufferAllocateInfo commandBufferAllocateInfo =
+        {
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            nullptr,
+            commandPool,
+            VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            static_cast<uint32_t>(commandBuffers.size())
+        };
+
+        checkVulkanError(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data()), "vkAllocateCommandBuffers");
     }
 
     VkDevice getDevice() const

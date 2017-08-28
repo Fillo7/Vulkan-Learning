@@ -9,42 +9,36 @@
 namespace VulkanLearning
 {
 
-class VulkanFramebuffer
+class VulkanFramebufferGroup
 {
 public:
-    explicit VulkanFramebuffer(VkDevice device, VkRenderPass renderPass, const VkExtent2D& extent,
+    explicit VulkanFramebufferGroup(VkDevice device, VkRenderPass renderPass, const VkExtent2D& extent,
         const std::vector<VkImageView>& imageViews) :
         device(device),
         renderPass(renderPass),
         extent(extent)
     {
-        framebuffers.resize(imageViews.size());
-
-        for (size_t i = 0; i < imageViews.size(); i++)
-        {
-            const VkFramebufferCreateInfo framebufferCreateInfo =
-            {
-                VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-                nullptr,
-                0,
-                renderPass,
-                1,
-                &imageViews.at(i),
-                extent.width,
-                extent.height,
-                1
-            };
-
-            checkVulkanError(vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &framebuffers.at(i)), "vkCreateFramebuffer");
-        }
+        initializeFramebufferGroup(imageViews);
     }
 
-    ~VulkanFramebuffer()
+    ~VulkanFramebufferGroup()
+    {
+        destroyFramebuffers();
+    }
+
+    void destroyFramebuffers()
     {
         for (size_t i = 0; i < framebuffers.size(); i++)
         {
             vkDestroyFramebuffer(device, framebuffers.at(i), nullptr);
         }
+    }
+
+    void reloadFramebuffers(VkRenderPass renderPass, const VkExtent2D& extent, const std::vector<VkImageView>& imageViews)
+    {
+        this->renderPass = renderPass;
+        this->extent = extent;
+        initializeFramebufferGroup(imageViews);
     }
 
     void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, const VkPipeline pipeline)
@@ -97,6 +91,11 @@ public:
         return renderPass;
     }
 
+    VkExtent2D getExtent() const
+    {
+        return extent;
+    }
+
     std::vector<VkFramebuffer> getFramebuffers() const
     {
         return framebuffers;
@@ -107,6 +106,29 @@ private:
     VkRenderPass renderPass;
     VkExtent2D extent;
     std::vector<VkFramebuffer> framebuffers;
+
+    void initializeFramebufferGroup(const std::vector<VkImageView>& imageViews)
+    {
+        framebuffers.resize(imageViews.size());
+
+        for (size_t i = 0; i < imageViews.size(); i++)
+        {
+            const VkFramebufferCreateInfo framebufferCreateInfo =
+            {
+                VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                nullptr,
+                0,
+                renderPass,
+                1,
+                &imageViews.at(i),
+                extent.width,
+                extent.height,
+                1
+            };
+
+            checkVulkanError(vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &framebuffers.at(i)), "vkCreateFramebuffer");
+        }
+    }
 };
 
 } // namespace VulkanLearning
