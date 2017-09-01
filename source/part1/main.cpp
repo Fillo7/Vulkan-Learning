@@ -10,6 +10,7 @@
 // Project headers
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
+#include "common/vertex.h"
 #include "common/vulkan_command_buffer_group.h"
 #include "common/vulkan_device.h"
 #include "common/vulkan_framebuffer_group.h"
@@ -61,8 +62,8 @@ int main(int argc, char* argv[])
     VulkanLearning::SdlWindow window("Part 1", 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_Event event;
 
-    VulkanLearning::VulkanInstance vulkanInstance("Part 1", { "VK_LAYER_LUNARG_standard_validation" }, { "VK_KHR_surface", "VK_KHR_win32_surface",
-        "VK_EXT_debug_report" });
+    VulkanLearning::VulkanInstance vulkanInstance("Part 1", {"VK_LAYER_LUNARG_standard_validation"}, {"VK_KHR_surface", "VK_KHR_win32_surface",
+        "VK_EXT_debug_report"});
     std::vector<VkPhysicalDevice> devices = vulkanInstance.getPhysicalDevices();
 
     if (devices.size() == 0)
@@ -71,8 +72,8 @@ int main(int argc, char* argv[])
     }
 
     VulkanLearning::VulkanSurface surface(vulkanInstance.getInstance(), window.getWindow());
-    VulkanLearning::VulkanDevice device(devices.at(0), VK_QUEUE_GRAPHICS_BIT, { "VK_LAYER_LUNARG_standard_validation" },
-        { "VK_KHR_swapchain" }, surface.getSurface());
+    VulkanLearning::VulkanDevice device(devices.at(0), VK_QUEUE_GRAPHICS_BIT, {"VK_LAYER_LUNARG_standard_validation"}, {"VK_KHR_swapchain"},
+        surface.getSurface());
     VulkanLearning::VulkanSwapChain swapChain(device.getDevice(), surface.getSurface(), device.getVulkanSwapChainInfo(),
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VulkanLearning::VulkanShaderModule vertexShader(device.getDevice(), "part1_vert.spv");
@@ -85,6 +86,9 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanCommandBufferGroup commandBuffers(device.getDevice(), device.getQueueFamilyIndex(),
         static_cast<uint32_t>(framebuffers.getFramebuffers().size()));
     framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline());
+
+    const std::vector<VulkanLearning::Vertex> vertices{{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
     while (!quit)
     {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -19,6 +20,40 @@ public:
         vertexShader(vertexShader),
         fragmentShader(fragmentShader)
     {
+        const VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo =
+        {
+            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            nullptr,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr
+        };
+
+        this->vertexInputStateCreateInfo = vertexInputStateCreateInfo;
+        initializePipeline(renderPass, swapChainExtent);
+    }
+
+    explicit VulkanPipeline(VkDevice device, VkRenderPass renderPass, VkShaderModule vertexShader, VkShaderModule fragmentShader,
+        const VkExtent2D& swapChainExtent, const VkVertexInputBindingDescription& vertexInputBindingDescription,
+        const std::array<VkVertexInputAttributeDescription, 2>& vertexInputAttributeDescriptions) :
+        device(device),
+        vertexShader(vertexShader),
+        fragmentShader(fragmentShader)
+    {
+        const VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo =
+        {
+            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            nullptr,
+            0,
+            1,
+            &vertexInputBindingDescription,
+            static_cast<uint32_t>(vertexInputAttributeDescriptions.size()),
+            vertexInputAttributeDescriptions.data()
+        };
+
+        this->vertexInputStateCreateInfo = vertexInputStateCreateInfo;
         initializePipeline(renderPass, swapChainExtent);
     }
 
@@ -69,6 +104,7 @@ private:
     VkShaderModule fragmentShader;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
+    VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
 
     void initializePipeline(VkRenderPass renderPass, const VkExtent2D& swapChainExtent)
     {
@@ -95,17 +131,6 @@ private:
         };
 
         std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos{ vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo };
-
-        const VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo =
-        {
-            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            nullptr,
-            0,
-            0,
-            nullptr,
-            0,
-            nullptr
-        };
 
         const VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo =
         {
