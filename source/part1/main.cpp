@@ -1,7 +1,6 @@
 // Core headers
 #include <cstdint>
 #include <iostream>
-#include <limits>
 
 // Library headers
 #include "SDL2/SDL.h"
@@ -23,18 +22,12 @@
 #include "common/vulkan_swap_chain.h"
 #include "common/vulkan_utility.h"
 
-#ifdef max
-#undef max
-#endif
-
 void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanCommandBufferGroup& commandBuffers)
 {
     VulkanLearning::VulkanSemaphore imageReadySemaphore(device.getDevice());
     VulkanLearning::VulkanSemaphore renderFinishedSemaphore(device.getDevice());
 
-    uint32_t imageIndex;
-    vkAcquireNextImageKHR(device.getDevice(), swapChain.getSwapChain(), std::numeric_limits<uint64_t>::max(), imageReadySemaphore.getSemaphore(),
-        VK_NULL_HANDLE, &imageIndex);
+    uint32_t imageIndex = device.getNextImageIndex(swapChain.getSwapChain(), imageReadySemaphore.getSemaphore());
     device.queueSubmit(commandBuffers.getCommandBuffers().at(imageIndex), imageReadySemaphore.getSemaphore(),
         renderFinishedSemaphore.getSemaphore());
     device.queuePresent(swapChain.getSwapChain(), renderFinishedSemaphore.getSemaphore(), imageIndex);
@@ -103,11 +96,10 @@ int main(int argc, char* argv[])
             }
             else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                int newWidth;
-                int newHeight;
-                SDL_GetWindowSize(window.getWindow(), &newWidth, &newHeight);
+                int newWidth = window.getWidth();
+                int newHeight = window.getHeight();
 
-                vkDeviceWaitIdle(device.getDevice());
+                device.waitIdle();
                 reloadSwapChain(swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, static_cast<uint32_t>(newWidth),
                     static_cast<uint32_t>(newHeight));
             }

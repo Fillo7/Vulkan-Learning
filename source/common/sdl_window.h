@@ -27,18 +27,22 @@ public:
 
     int getWidth() const
     {
+        int width;
+        SDL_GetWindowSize(window, &width, nullptr);
+
         return width;
     }
 
     int getHeight() const
     {
+        int height;
+        SDL_GetWindowSize(window, nullptr, &height);
+
         return height;
     }
 
 private:
     SDL_Window* window;
-    int width;
-    int height;
 };
 
 } // namespace VulkanLearning

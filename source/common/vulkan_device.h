@@ -1,12 +1,17 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
 #include "vulkan/vulkan.h"
 #include "vulkan_swap_chain_info.h"
 #include "vulkan_utility.h"
+
+#ifdef max
+#undef max
+#endif
 
 namespace VulkanLearning
 {
@@ -132,6 +137,11 @@ public:
         return info;
     }
 
+    void waitIdle()
+    {
+        vkDeviceWaitIdle(device);
+    }
+
     void queueSubmit(VkCommandBuffer commandBuffer, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore)
     {
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -170,6 +180,14 @@ public:
 
         vkQueuePresentKHR(queue, &presentInfo); // error checking not done on purpose
         vkQueueWaitIdle(queue);
+    }
+
+    uint32_t getNextImageIndex(VkSwapchainKHR swapChain, VkSemaphore waitSemaphore)
+    {
+        uint32_t imageIndex;
+        vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), waitSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+        return imageIndex;
     }
 
     VkPhysicalDevice getPhysicalDevice() const
