@@ -41,7 +41,8 @@ public:
         initializeFramebufferGroup(imageViews);
     }
 
-    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, const VkPipeline pipeline)
+    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, const VkPipeline pipeline, const std::vector<VkBuffer>& vertexBuffers,
+        const std::vector<VkDeviceSize>& offsets, const size_t numberOfVertices)
     {
         for (size_t i = 0; i < commandBuffers.size(); i++)
         {
@@ -74,7 +75,13 @@ public:
 
             vkCmdBeginRenderPass(commandBuffers.at(i), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(commandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-            vkCmdDraw(commandBuffers.at(i), 3, 1, 0, 0);
+
+            if (vertexBuffers.size() > 0)
+            {
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, static_cast<uint32_t>(vertexBuffers.size()), vertexBuffers.data(), offsets.data());
+            }
+
+            vkCmdDraw(commandBuffers.at(i), static_cast<uint32_t>(numberOfVertices), 1, 0, 0);
 
             vkCmdEndRenderPass(commandBuffers.at(i));
             checkVulkanError(vkEndCommandBuffer(commandBuffers.at(i)), "vkEndCommandBuffer");

@@ -11,6 +11,7 @@
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
 #include "common/vertex.h"
+#include "common/vulkan_buffer.h"
 #include "common/vulkan_command_buffer_group.h"
 #include "common/vulkan_device.h"
 #include "common/vulkan_framebuffer_group.h"
@@ -36,7 +37,7 @@ void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain&
 
 void reloadSwapChain(VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanFramebufferGroup& framebuffers,
     VulkanLearning::VulkanCommandBufferGroup& commandBuffers, VulkanLearning::VulkanRenderPass& renderPass, VulkanLearning::VulkanPipeline& pipeline,
-    uint32_t width, uint32_t height)
+    VulkanLearning::VulkanBuffer& vertexBuffer, uint32_t width, uint32_t height)
 {
     framebuffers.destroyFramebuffers();
     commandBuffers.destroyCommandBuffers();
@@ -52,7 +53,7 @@ void reloadSwapChain(VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning:
     framebuffers.reloadFramebuffers(renderPass.getRenderPass(), newExtent, swapChain.getImageViews());
     commandBuffers.reloadCommandBuffers();
 
-    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), pipeline.getPipeline());
+    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), pipeline.getPipeline(), {vertexBuffer.getBuffer()}, {0}, 3);
 }
 
 int main(int argc, char* argv[])
@@ -71,6 +72,9 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    const std::vector<VulkanLearning::Vertex> vertices{{{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+
     VulkanLearning::VulkanSurface surface(vulkanInstance.getInstance(), window.getWindow());
     VulkanLearning::VulkanDevice device(devices.at(0), VK_QUEUE_GRAPHICS_BIT, {"VK_LAYER_LUNARG_standard_validation"}, {"VK_KHR_swapchain"},
         surface.getSurface());
@@ -80,15 +84,19 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanShaderModule fragmentShader(device.getDevice(), "part1_frag.spv");
     VulkanLearning::VulkanRenderPass renderPass(device.getDevice(), swapChain.getSurfaceFormat().format);
     VulkanLearning::VulkanPipeline graphicsPipeline(device.getDevice(), renderPass.getRenderPass(), vertexShader.getShaderModule(),
-        fragmentShader.getShaderModule(), swapChain.getExtent());
+        fragmentShader.getShaderModule(), swapChain.getExtent(), vertices.at(0).getVertexInputBindingDescription(),
+        vertices.at(0).getVertexInputAttributeDescriptions());
     VulkanLearning::VulkanFramebufferGroup framebuffers(device.getDevice(), renderPass.getRenderPass(), swapChain.getExtent(),
         swapChain.getImageViews());
     VulkanLearning::VulkanCommandBufferGroup commandBuffers(device.getDevice(), device.getQueueFamilyIndex(),
         static_cast<uint32_t>(framebuffers.getFramebuffers().size()));
-    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline());
 
-    const std::vector<VulkanLearning::Vertex> vertices{{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+    VulkanLearning::VulkanBuffer buffer(device.getDevice(), sizeof(vertices.at(0)) * vertices.size());
+    buffer.allocateMemory(device.getSuitableMemoryTypeIndex(buffer.getMemoryRequirements().memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    buffer.uploadData(vertices.data(), sizeof(vertices.at(0)) * vertices.size());
+
+    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {buffer.getBuffer()}, {0}, vertices.size());
 
     while (!quit)
     {
@@ -104,7 +112,7 @@ int main(int argc, char* argv[])
                 int newHeight = window.getHeight();
 
                 device.waitIdle();
-                reloadSwapChain(swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, static_cast<uint32_t>(newWidth),
+                reloadSwapChain(swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, buffer, static_cast<uint32_t>(newWidth),
                     static_cast<uint32_t>(newHeight));
             }
             else if (event.type == SDL_KEYDOWN)

@@ -108,6 +108,21 @@ public:
         return deviceMemoryProperties;
     }
 
+    uint32_t getSuitableMemoryTypeIndex(const uint32_t typeFilter, const VkMemoryPropertyFlags properties) const
+    {
+        VkPhysicalDeviceMemoryProperties memoryProperties = getPhysicalDeviceMemoryProperties();
+
+        for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+        {
+            if (typeFilter & (1 << i) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("Current device does not have any suitable memory types available");
+    }
+
     VulkanSwapChainInfo getVulkanSwapChainInfo() const
     {
         VulkanSwapChainInfo info;
