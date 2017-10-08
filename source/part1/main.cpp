@@ -91,12 +91,22 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanCommandBufferGroup commandBuffers(device.getDevice(), device.getQueueFamilyIndex(),
         static_cast<uint32_t>(framebuffers.getFramebuffers().size()));
 
-    VulkanLearning::VulkanBuffer buffer(device.getDevice(), sizeof(vertices.at(0)) * vertices.size());
-    buffer.allocateMemory(device.getSuitableMemoryTypeIndex(buffer.getMemoryRequirements().memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-        | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-    buffer.uploadData(vertices.data(), sizeof(vertices.at(0)) * vertices.size());
+    VulkanLearning::VulkanBuffer stagingBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(vertices.at(0)) * vertices.size());
+    stagingBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(stagingBuffer.getMemoryRequirements().memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    stagingBuffer.uploadData(vertices.data(), sizeof(vertices.at(0)) * vertices.size());
 
-    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {buffer.getBuffer()}, {0}, vertices.size());
+    VulkanLearning::VulkanCommandBufferGroup dataTransferCommand(device.getDevice(), device.getQueueFamilyIndex(), 1);
+
+    VulkanLearning::VulkanBuffer vertexBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        sizeof(vertices.at(0)) * vertices.size());
+    vertexBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(vertexBuffer.getMemoryRequirements().memoryTypeBits,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+    vertexBuffer.uploadData(stagingBuffer.getBuffer(), sizeof(vertices.at(0)) * vertices.size(), dataTransferCommand.getCommandBuffers().at(0));
+    device.queueSubmit(dataTransferCommand.getCommandBuffers().at(0));
+
+    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()}, {0},
+        vertices.size());
 
     while (!quit)
     {
@@ -112,7 +122,7 @@ int main(int argc, char* argv[])
                 int newHeight = window.getHeight();
 
                 device.waitIdle();
-                reloadSwapChain(swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, buffer, static_cast<uint32_t>(newWidth),
+                reloadSwapChain(swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, vertexBuffer, static_cast<uint32_t>(newWidth),
                     static_cast<uint32_t>(newHeight));
             }
             else if (event.type == SDL_KEYDOWN)

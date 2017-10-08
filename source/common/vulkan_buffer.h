@@ -11,8 +11,9 @@ namespace VulkanLearning
 class VulkanBuffer
 {
 public:
-    explicit VulkanBuffer(VkDevice device, const VkDeviceSize bufferSize) :
+    explicit VulkanBuffer(VkDevice device, const VkBufferUsageFlags usageFlags, const VkDeviceSize bufferSize) :
         device(device),
+        usageFlags(usageFlags),
         bufferSize(bufferSize),
         memoryAllocated(false)
     {
@@ -22,7 +23,7 @@ public:
             nullptr,
             0,
             bufferSize,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            usageFlags,
             VK_SHARING_MODE_EXCLUSIVE,
             0,
             nullptr
@@ -64,7 +65,7 @@ public:
         memoryAllocated = true;
     }
 
-    void uploadData(const void* source, const size_t dataSize)
+    void uploadData(const void* source, const VkDeviceSize dataSize)
     {
         void* data;
         checkVulkanError(vkMapMemory(device, bufferMemory, 0, dataSize, 0, &data), "vkMapMemory");
@@ -72,9 +73,36 @@ public:
         vkUnmapMemory(device, bufferMemory);
     }
 
+    void uploadData(VkBuffer sourceBuffer, const VkDeviceSize dataSize, VkCommandBuffer commandBuffer)
+    {
+        const VkCommandBufferBeginInfo commandBufferBeginInfo =
+        {
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            nullptr,
+            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            nullptr
+        };
+
+        const VkBufferCopy copyRegion =
+        {
+            0,
+            0,
+            dataSize
+        };
+
+        checkVulkanError(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo), "vkBeginCommandBuffer");
+        vkCmdCopyBuffer(commandBuffer, sourceBuffer, buffer, 1, &copyRegion);
+        checkVulkanError(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");
+    }
+
     VkDevice getDevice() const
     {
         return device;
+    }
+
+    VkBufferUsageFlags getUsageFlags() const
+    {
+        return usageFlags;
     }
 
     VkDeviceSize getBufferSize() const
@@ -89,6 +117,7 @@ public:
 
 private:
     VkDevice device;
+    VkBufferUsageFlags usageFlags;
     VkDeviceSize bufferSize;
     VkBuffer buffer;
     bool memoryAllocated;

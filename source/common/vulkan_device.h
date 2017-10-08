@@ -157,6 +157,25 @@ public:
         vkDeviceWaitIdle(device);
     }
 
+    void queueSubmit(VkCommandBuffer commandBuffer)
+    {
+        const VkSubmitInfo submitInfo =
+        {
+            VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            nullptr,
+            0,
+            nullptr,
+            nullptr,
+            1,
+            &commandBuffer,
+            0,
+            nullptr
+        };
+
+        checkVulkanError(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE), "vkQueueSubmit");
+        vkQueueWaitIdle(queue);
+    }
+
     void queueSubmit(VkCommandBuffer commandBuffer, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore)
     {
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -197,10 +216,10 @@ public:
         vkQueueWaitIdle(queue);
     }
 
-    uint32_t getNextImageIndex(VkSwapchainKHR swapChain, VkSemaphore waitSemaphore)
+    uint32_t getNextImageIndex(VkSwapchainKHR swapChain, VkSemaphore signalSemaphore)
     {
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), waitSemaphore, VK_NULL_HANDLE, &imageIndex);
+        vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), signalSemaphore, VK_NULL_HANDLE, &imageIndex);
 
         return imageIndex;
     }
