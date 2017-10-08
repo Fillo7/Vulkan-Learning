@@ -13,29 +13,26 @@ class VulkanCommandBufferGroup
 {
 public:
     explicit VulkanCommandBufferGroup(VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount) :
-        device(device)
+        VulkanCommandBufferGroup(device, queueFamilyIndex, commandBufferCount, 0)
+    {}
+
+    explicit VulkanCommandBufferGroup(VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount,
+        const VkCommandPoolCreateFlags commandPoolCreateFlags) :
+        device(device),
+        commandBufferCount(commandBufferCount),
+        commandPoolCreateFlags(commandPoolCreateFlags)
     {
         const VkCommandPoolCreateInfo commandPoolCreateInfo =
         {
             VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
             nullptr,
-            0,
+            commandPoolCreateFlags,
             queueFamilyIndex
         };
 
         checkVulkanError(vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool), "vkCreateCommandPool");
-
-        const VkCommandBufferAllocateInfo commandBufferAllocateInfo =
-        {
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            nullptr,
-            commandPool,
-            VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            commandBufferCount
-        };
-
         commandBuffers.resize(commandBufferCount);
-        checkVulkanError(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data()), "vkAllocateCommandBuffers");
+        allocateCommandBuffers();
     }
 
     ~VulkanCommandBufferGroup()
@@ -50,21 +47,22 @@ public:
 
     void reloadCommandBuffers()
     {
-        const VkCommandBufferAllocateInfo commandBufferAllocateInfo =
-        {
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            nullptr,
-            commandPool,
-            VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            static_cast<uint32_t>(commandBuffers.size())
-        };
-
-        checkVulkanError(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data()), "vkAllocateCommandBuffers");
+        allocateCommandBuffers();
     }
 
     VkDevice getDevice() const
     {
         return device;
+    }
+
+    uint32_t getCommandBufferCount() const
+    {
+        return commandBufferCount;
+    }
+
+    VkCommandPoolCreateFlags getCommandPoolCreateFlags() const
+    {
+        return commandPoolCreateFlags;
     }
 
     VkCommandPool getCommandPool() const
@@ -79,8 +77,24 @@ public:
 
 private:
     VkDevice device;
+    uint32_t commandBufferCount;
+    VkCommandPoolCreateFlags commandPoolCreateFlags;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
+
+    void allocateCommandBuffers()
+    {
+        const VkCommandBufferAllocateInfo commandBufferAllocateInfo =
+        {
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            nullptr,
+            commandPool,
+            VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            commandBufferCount
+        };
+
+        checkVulkanError(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data()), "vkAllocateCommandBuffers");
+    }
 };
 
 } // namespace VulkanLearning

@@ -15,7 +15,8 @@ public:
         device(device),
         usageFlags(usageFlags),
         bufferSize(bufferSize),
-        memoryAllocated(false)
+        memoryAllocated(false),
+        bufferDestroyed(false)
     {
         const VkBufferCreateInfo bufferCreateInfo =
         {
@@ -34,11 +35,21 @@ public:
 
     ~VulkanBuffer()
     {
+        if (!bufferDestroyed)
+        {
+            destroyBuffer();
+        }
+    }
+
+    void destroyBuffer()
+    {
         vkDestroyBuffer(device, buffer, nullptr);
         if (memoryAllocated)
         {
             vkFreeMemory(device, bufferMemory, nullptr);
+            memoryAllocated = false;
         }
+        bufferDestroyed = true;
     }
 
     VkMemoryRequirements getMemoryRequirements() const
@@ -120,8 +131,9 @@ private:
     VkBufferUsageFlags usageFlags;
     VkDeviceSize bufferSize;
     VkBuffer buffer;
-    bool memoryAllocated;
     VkDeviceMemory bufferMemory;
+    bool memoryAllocated;
+    bool bufferDestroyed;
 };
 
 } // namespace VulkanLearning

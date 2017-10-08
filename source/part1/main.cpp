@@ -96,7 +96,8 @@ int main(int argc, char* argv[])
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
     stagingBuffer.uploadData(vertices.data(), sizeof(vertices.at(0)) * vertices.size());
 
-    VulkanLearning::VulkanCommandBufferGroup dataTransferCommand(device.getDevice(), device.getQueueFamilyIndex(), 1);
+    VulkanLearning::VulkanCommandBufferGroup dataTransferCommand(device.getDevice(), device.getQueueFamilyIndex(), 1,
+        VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
     VulkanLearning::VulkanBuffer vertexBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         sizeof(vertices.at(0)) * vertices.size());
@@ -104,6 +105,7 @@ int main(int argc, char* argv[])
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
     vertexBuffer.uploadData(stagingBuffer.getBuffer(), sizeof(vertices.at(0)) * vertices.size(), dataTransferCommand.getCommandBuffers().at(0));
     device.queueSubmit(dataTransferCommand.getCommandBuffers().at(0));
+    stagingBuffer.destroyBuffer();
 
     framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()}, {0},
         vertices.size());
