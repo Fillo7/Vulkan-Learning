@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-
+#include <vector>
 #include "SDL2/SDL.h"
+#include "SDL2/SDL_vulkan.h"
 
 namespace VulkanLearning
 {
@@ -40,6 +41,23 @@ public:
 
         return height;
     }
+
+	std::vector<const char*> getInstanceExtensions() const
+	{
+		unsigned int extensionCount;
+		if (!SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr))
+		{
+			throw std::runtime_error(std::string("Unable to retrieve instance extension count: ") + SDL_GetError());
+		}
+
+		std::vector<const char*> result(extensionCount);
+		if (!SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, result.data()))
+		{
+			throw std::runtime_error(std::string("Unable to retrieve instance extensions: ") + SDL_GetError());
+		}
+
+		return result;
+	}
 
 private:
     SDL_Window* window;

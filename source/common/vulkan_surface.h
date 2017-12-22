@@ -2,11 +2,9 @@
 
 #include <cstdint>
 #include <vector>
-
 #include "SDL2/SDL.h"
-#include "SDL2/SDL_syswm.h"
+#include "SDL2/SDL_vulkan.h"
 #include "vulkan/vulkan.h"
-#include "vulkan_utility.h"
 
 namespace VulkanLearning
 {
@@ -17,22 +15,10 @@ public:
     explicit VulkanSurface(VkInstance instance, SDL_Window* window) :
         instance(instance)
     {
-        SDL_SysWMinfo wmInfo;
-        SDL_VERSION(&wmInfo.version);
-        SDL_GetWindowWMInfo(window, &wmInfo);
-        HWND hardwareWindow = wmInfo.info.win.window;
-
-        VkWin32SurfaceCreateInfoKHR createInfo =
-        {
-            VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
-            nullptr,
-            0,
-            GetModuleHandle(nullptr),
-            hardwareWindow
-        };
-
-        auto createWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
-        checkVulkanError(createWin32SurfaceKHR(instance, &createInfo, nullptr, &surface), "vkCreateWin32SurfaceKHR");
+		if (!SDL_Vulkan_CreateSurface(window, instance, &surface))
+		{
+			throw std::runtime_error(std::string("Unable to create surface: ") + SDL_GetError());
+		}
     }
 
     ~VulkanSurface()

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstring>
-
 #include "vulkan/vulkan.h"
 #include "vulkan_utility.h"
 

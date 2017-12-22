@@ -9,10 +9,6 @@
 #include "vulkan_swap_chain_info.h"
 #include "vulkan_utility.h"
 
-#ifdef max
-#undef max
-#endif
-
 namespace VulkanLearning
 {
 

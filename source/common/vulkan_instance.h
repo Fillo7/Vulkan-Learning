@@ -14,6 +14,10 @@ namespace VulkanLearning
 class VulkanInstance
 {
 public:
+	VulkanInstance(const std::string& applicationName) :
+		VulkanInstance(applicationName, {}, {})
+	{}
+
     VulkanInstance(const std::string& applicationName, const std::vector<const char*>& validationLayers,
         const std::vector<const char*>& extensions) :
         debugCallbackLoaded(false)
@@ -31,7 +35,7 @@ public:
             0,
             "",
             0,
-            VK_MAKE_VERSION(1, 0, 51)
+            VK_MAKE_VERSION(1, 0, 65)
         };
 
         const VkInstanceCreateInfo instanceCreateInfo =
@@ -108,7 +112,7 @@ private:
         checkVulkanError(vkEnumerateInstanceLayerProperties(&layerCount, nullptr), "vkEnumerateInstanceLayerProperties");
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+		checkVulkanError(vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()), "vkEnumerateInstanceLayerProperties");
 
         for (const char* layer : validationLayers)
         {
@@ -122,7 +126,7 @@ private:
                 }
             }
 
-            if (layerFound == false)
+            if (!layerFound)
             {
                 return false;
             }

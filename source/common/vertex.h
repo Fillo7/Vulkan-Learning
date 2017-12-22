@@ -2,7 +2,6 @@
 
 #include <array>
 #include <string>
-
 #include "glm/glm.hpp"
 #include "vulkan/vulkan.h"
 
@@ -29,7 +28,7 @@ public:
 
     static VkVertexInputBindingDescription getVertexInputBindingDescription()
     {
-        VkVertexInputBindingDescription vertexInputBindingDescription =
+        const VkVertexInputBindingDescription vertexInputBindingDescription =
         {
             0,
             sizeof(Vertex),

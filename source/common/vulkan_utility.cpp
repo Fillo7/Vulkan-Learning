@@ -1,5 +1,4 @@
 #include <stdexcept>
-
 #include "vulkan_utility.h"
 
 namespace VulkanLearning

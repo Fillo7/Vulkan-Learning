@@ -12,7 +12,7 @@ function setupVulkan()
     return true
 end
 
--- Project configuration
+-- Solution configuration
 workspace "VulkanLearning"
     configurations { "Debug", "Release" }
     platforms { "x86_64" }
@@ -31,7 +31,7 @@ workspace "VulkanLearning"
     
     filter {}
 
--- Library configuration
+-- Project configuration
 project "Part1"
     kind "ConsoleApp"
     files { "source/common/*.h", "source/common/*.cpp", "source/part1/*.h", "source/part1/*.cpp" }
