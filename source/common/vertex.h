@@ -11,6 +11,11 @@ namespace VulkanLearning
 class Vertex
 {
 public:
+    Vertex() :
+        position(0.0f, 0.0f),
+        color(1.0f, 1.0f, 1.0f)
+    {}
+
     Vertex(const glm::vec2& position, const glm::vec3& color) :
         position(position),
         color(color)

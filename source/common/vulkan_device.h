@@ -4,7 +4,6 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
-
 #include "vulkan/vulkan.h"
 #include "vulkan_swap_chain_info.h"
 #include "vulkan_utility.h"
@@ -174,7 +173,7 @@ public:
 
     void queueSubmit(VkCommandBuffer commandBuffer, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore)
     {
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
         const VkSubmitInfo submitInfo =
         {
@@ -194,7 +193,7 @@ public:
 
     void queuePresent(VkSwapchainKHR swapChain, VkSemaphore waitSemaphore, const uint32_t imageIndex)
     {
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
         const VkPresentInfoKHR presentInfo =
         {

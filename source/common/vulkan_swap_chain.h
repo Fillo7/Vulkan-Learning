@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <vector>
-
 #include "vulkan/vulkan.h"
 #include "vulkan_swap_chain_info.h"
 #include "vulkan_utility.h"
@@ -38,9 +37,9 @@ public:
         vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 
-    void reloadSwapChain(VkExtent2D& extent)
+    void reloadSwapChain(const VulkanSwapChainInfo& swapChainInfo)
     {
-        initializeSwapChain(swapChainInfo, extent, imageUsageFlags);
+        initializeSwapChain(swapChainInfo, chooseExtent(swapChainInfo.getSurfaceCapabilities()), imageUsageFlags);
     }
 
     VkDevice getDevice() const

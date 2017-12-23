@@ -34,9 +34,10 @@ void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain&
     device.queuePresent(swapChain.getSwapChain(), renderFinishedSemaphore.getSemaphore(), imageIndex);
 }
 
-void reloadSwapChain(VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning::VulkanFramebufferGroup& framebuffers,
-    VulkanLearning::VulkanCommandBufferGroup& commandBuffers, VulkanLearning::VulkanRenderPass& renderPass, VulkanLearning::VulkanPipeline& pipeline,
-    VulkanLearning::VulkanBuffer& vertexBuffer, uint32_t width, uint32_t height)
+void reloadSwapChain(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain,
+    VulkanLearning::VulkanFramebufferGroup& framebuffers, VulkanLearning::VulkanCommandBufferGroup& commandBuffers,
+    VulkanLearning::VulkanRenderPass& renderPass, VulkanLearning::VulkanPipeline& pipeline, VulkanLearning::VulkanBuffer& vertexBuffer,
+    uint32_t width, uint32_t height)
 {
     framebuffers.destroyFramebuffers();
     commandBuffers.destroyCommandBuffers();
@@ -44,12 +45,10 @@ void reloadSwapChain(VulkanLearning::VulkanSwapChain& swapChain, VulkanLearning:
     renderPass.destroyRenderPass();
     swapChain.destroySwapChain();
 
-    VkExtent2D newExtent = {width, height};
-
-    swapChain.reloadSwapChain(newExtent);
+    swapChain.reloadSwapChain(device.getVulkanSwapChainInfo());
     renderPass.reloadRenderPass(swapChain.getSurfaceFormat().format);
-    pipeline.reloadPipeline(renderPass.getRenderPass(), newExtent);
-    framebuffers.reloadFramebuffers(renderPass.getRenderPass(), newExtent, swapChain.getImageViews());
+    pipeline.reloadPipeline(renderPass.getRenderPass(), swapChain.getExtent());
+    framebuffers.reloadFramebuffers(renderPass.getRenderPass(), swapChain.getExtent(), swapChain.getImageViews());
     commandBuffers.reloadCommandBuffers();
 
     framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), pipeline.getPipeline(), {vertexBuffer.getBuffer()}, {0}, 3);
@@ -69,6 +68,7 @@ int main(int argc, char* argv[])
 
     if (devices.size() == 0)
     {
+        std::cerr << "No Vulkan device found" << std::endl;
         return -1;
     }
 
@@ -124,8 +124,8 @@ int main(int argc, char* argv[])
                 int newHeight = window.getHeight();
 
                 device.waitIdle();
-                reloadSwapChain(swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, vertexBuffer, static_cast<uint32_t>(newWidth),
-                    static_cast<uint32_t>(newHeight));
+                reloadSwapChain(device, swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, vertexBuffer,
+                    static_cast<uint32_t>(newWidth), static_cast<uint32_t>(newHeight));
             }
             else if (event.type == SDL_KEYDOWN)
             {

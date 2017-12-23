@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-
 #include "vulkan/vulkan.h"
 #include "vulkan_utility.h"
 
@@ -153,7 +152,7 @@ private:
 
         const VkRect2D scissor =
         {
-            VkOffset2D{ 0, 0 },
+            VkOffset2D{0, 0},
             swapChainExtent
         };
 
