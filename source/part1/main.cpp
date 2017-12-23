@@ -61,8 +61,8 @@ int main(int argc, char* argv[])
     VulkanLearning::SdlInstance sdlInstance(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     VulkanLearning::SdlWindow window("Part 1", 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
     SDL_Event event;
-	std::vector<const char*> extensions = window.getInstanceExtensions();
-	extensions.push_back("VK_EXT_debug_report");
+    std::vector<const char*> extensions = window.getInstanceExtensions();
+    extensions.push_back("VK_EXT_debug_report");
 
     VulkanLearning::VulkanInstance vulkanInstance("Part 1", {"VK_LAYER_LUNARG_standard_validation"}, extensions);
     std::vector<VkPhysicalDevice> devices = vulkanInstance.getPhysicalDevices();

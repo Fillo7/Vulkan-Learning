@@ -15,10 +15,10 @@ public:
     explicit VulkanSurface(VkInstance instance, SDL_Window* window) :
         instance(instance)
     {
-		if (!SDL_Vulkan_CreateSurface(window, instance, &surface))
-		{
-			throw std::runtime_error(std::string("Unable to create surface: ") + SDL_GetError());
-		}
+        if (!SDL_Vulkan_CreateSurface(window, instance, &surface))
+        {
+            throw std::runtime_error(std::string("Unable to create surface: ") + SDL_GetError());
+        }
     }
 
     ~VulkanSurface()
