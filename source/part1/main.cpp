@@ -34,26 +34,6 @@ void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain&
     device.queuePresent(swapChain.getSwapChain(), renderFinishedSemaphore.getSemaphore(), imageIndex);
 }
 
-void reloadSwapChain(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain& swapChain,
-    VulkanLearning::VulkanFramebufferGroup& framebuffers, VulkanLearning::VulkanCommandBufferGroup& commandBuffers,
-    VulkanLearning::VulkanRenderPass& renderPass, VulkanLearning::VulkanPipeline& pipeline, VulkanLearning::VulkanBuffer& vertexBuffer,
-    uint32_t width, uint32_t height)
-{
-    framebuffers.destroyFramebuffers();
-    commandBuffers.destroyCommandBuffers();
-    pipeline.destroyPipeline();
-    renderPass.destroyRenderPass();
-    swapChain.destroySwapChain();
-
-    swapChain.reloadSwapChain(device.getVulkanSwapChainInfo());
-    renderPass.reloadRenderPass(swapChain.getSurfaceFormat().format);
-    pipeline.reloadPipeline(renderPass.getRenderPass(), swapChain.getExtent());
-    framebuffers.reloadFramebuffers(renderPass.getRenderPass(), swapChain.getExtent(), swapChain.getImageViews());
-    commandBuffers.reloadCommandBuffers();
-
-    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), pipeline.getPipeline(), {vertexBuffer.getBuffer()}, {0}, 3);
-}
-
 int main(int argc, char* argv[])
 {
     bool quit = false;
@@ -72,8 +52,14 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    const std::vector<VulkanLearning::Vertex> vertices{{{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+    const std::vector<VulkanLearning::Vertex> vertices
+    {
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    };
+    const std::vector<uint16_t> vertexIndices = {0, 1, 2, 2, 3, 0};
 
     VulkanLearning::VulkanSurface surface(vulkanInstance.getInstance(), window.getWindow());
     VulkanLearning::VulkanDevice device(devices.at(0), VK_QUEUE_GRAPHICS_BIT, {"VK_LAYER_LUNARG_standard_validation"}, {"VK_KHR_swapchain"},
@@ -91,24 +77,45 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanCommandBufferGroup commandBuffers(device.getDevice(), device.getQueueFamilyIndex(),
         static_cast<uint32_t>(framebuffers.getFramebuffers().size()));
 
-    VulkanLearning::VulkanBuffer stagingBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(vertices.at(0)) * vertices.size());
-    stagingBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(stagingBuffer.getMemoryRequirements().memoryTypeBits,
+    // Transfer vertex data into staging buffer
+    VulkanLearning::VulkanBuffer stagingVertexBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(vertices.at(0)) * vertices.size());
+    stagingVertexBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(stagingVertexBuffer.getMemoryRequirements().memoryTypeBits,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-    stagingBuffer.uploadData(vertices.data(), sizeof(vertices.at(0)) * vertices.size());
+    stagingVertexBuffer.uploadData(vertices.data(), sizeof(vertices.at(0)) * vertices.size());
 
-    VulkanLearning::VulkanCommandBufferGroup dataTransferCommand(device.getDevice(), device.getQueueFamilyIndex(), 1,
+    // Transfer vertex data from staging buffer to device buffer
+    VulkanLearning::VulkanCommandBufferGroup vertexTransferCommand(device.getDevice(), device.getQueueFamilyIndex(), 1,
         VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-
     VulkanLearning::VulkanBuffer vertexBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         sizeof(vertices.at(0)) * vertices.size());
     vertexBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(vertexBuffer.getMemoryRequirements().memoryTypeBits,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-    vertexBuffer.uploadData(stagingBuffer.getBuffer(), sizeof(vertices.at(0)) * vertices.size(), dataTransferCommand.getCommandBuffers().at(0));
-    device.queueSubmit(dataTransferCommand.getCommandBuffers().at(0));
-    stagingBuffer.destroyBuffer();
+    vertexBuffer.uploadData(stagingVertexBuffer.getBuffer(), sizeof(vertices.at(0)) * vertices.size(),
+        vertexTransferCommand.getCommandBuffers().at(0));
+    device.queueSubmit(vertexTransferCommand.getCommandBuffers().at(0));
+    stagingVertexBuffer.destroyBuffer();
 
-    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()}, {0},
-        vertices.size());
+    // Transfer index data into staging buffer
+    VulkanLearning::VulkanBuffer stagingIndexBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        sizeof(vertexIndices.at(0)) * vertexIndices.size());
+    stagingIndexBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(stagingIndexBuffer.getMemoryRequirements().memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    stagingIndexBuffer.uploadData(vertexIndices.data(), sizeof(vertexIndices.at(0)) * vertexIndices.size());
+
+    // Transfer index data from staging buffer to device buffer
+    VulkanLearning::VulkanCommandBufferGroup indexTransferCommand(device.getDevice(), device.getQueueFamilyIndex(), 1,
+        VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+    VulkanLearning::VulkanBuffer indexBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        sizeof(vertexIndices.at(0)) * vertexIndices.size());
+    indexBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(indexBuffer.getMemoryRequirements().memoryTypeBits,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+    indexBuffer.uploadData(stagingIndexBuffer.getBuffer(), sizeof(vertexIndices.at(0)) * vertexIndices.size(),
+        indexTransferCommand.getCommandBuffers().at(0));
+    device.queueSubmit(indexTransferCommand.getCommandBuffers().at(0));
+    stagingIndexBuffer.destroyBuffer();
+
+    framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()},
+        indexBuffer.getBuffer(), vertexIndices.size(), {0}, vertices.size());
 
     while (!quit)
     {
@@ -120,12 +127,22 @@ int main(int argc, char* argv[])
             }
             else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                int newWidth = window.getWidth();
-                int newHeight = window.getHeight();
-
                 device.waitIdle();
-                reloadSwapChain(device, swapChain, framebuffers, commandBuffers, renderPass, graphicsPipeline, vertexBuffer,
-                    static_cast<uint32_t>(newWidth), static_cast<uint32_t>(newHeight));
+
+                framebuffers.destroyFramebuffers();
+                commandBuffers.destroyCommandBuffers();
+                graphicsPipeline.destroyPipeline();
+                renderPass.destroyRenderPass();
+                swapChain.destroySwapChain();
+
+                swapChain.reloadSwapChain(device.getVulkanSwapChainInfo());
+                renderPass.reloadRenderPass(swapChain.getSurfaceFormat().format);
+                graphicsPipeline.reloadPipeline(renderPass.getRenderPass(), swapChain.getExtent());
+                framebuffers.reloadFramebuffers(renderPass.getRenderPass(), swapChain.getExtent(), swapChain.getImageViews());
+                commandBuffers.reloadCommandBuffers();
+
+                framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()},
+                    indexBuffer.getBuffer(), vertexIndices.size(), {0}, vertices.size());
             }
             else if (event.type == SDL_KEYDOWN)
             {

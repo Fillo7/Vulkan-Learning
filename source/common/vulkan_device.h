@@ -15,7 +15,12 @@ class VulkanDevice
 {
 public:
     explicit VulkanDevice(VkPhysicalDevice physicalDevice, const VkQueueFlagBits queueFlags, const std::vector<const char*>& validationLayers,
-        const std::vector<const char*>& extensions, VkSurfaceKHR surface = nullptr) :
+        const std::vector<const char*>& extensions) :
+        VulkanDevice(physicalDevice, queueFlags, validationLayers, extensions, nullptr)
+    {}
+
+    explicit VulkanDevice(VkPhysicalDevice physicalDevice, const VkQueueFlagBits queueFlags, const std::vector<const char*>& validationLayers,
+        const std::vector<const char*>& extensions, VkSurfaceKHR surface) :
         physicalDevice(physicalDevice),
         queueFlags(queueFlags),
         surface(surface)
