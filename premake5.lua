@@ -34,7 +34,7 @@ workspace "VulkanLearning"
 -- Project configuration
 project "Part1"
     kind "ConsoleApp"
-    files { "source/common/*.h", "source/common/*.cpp", "source/part1/*.h", "source/part1/*.cpp" }
+    files { "source/common/*.h", "source/common/*.cpp", "source/part1/*.h", "source/part1/*.cpp", "source/part1/*.frag", "source/part1/*.vert" }
     includedirs { "source" }
 
     vulkan = setupVulkan() 

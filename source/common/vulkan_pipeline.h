@@ -31,15 +31,17 @@ public:
         };
 
         this->vertexInputStateCreateInfo = vertexInputStateCreateInfo;
-        initializePipeline(renderPass, swapChainExtent);
+        initializePipeline(renderPass, swapChainExtent, descriptorSetLayouts);
     }
 
     explicit VulkanPipeline(VkDevice device, VkRenderPass renderPass, VkShaderModule vertexShader, VkShaderModule fragmentShader,
         const VkExtent2D& swapChainExtent, const VkVertexInputBindingDescription& vertexInputBindingDescription,
-        const std::array<VkVertexInputAttributeDescription, 2>& vertexInputAttributeDescriptions) :
+        const std::array<VkVertexInputAttributeDescription, 2>& vertexInputAttributeDescriptions,
+        const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts) :
         device(device),
         vertexShader(vertexShader),
-        fragmentShader(fragmentShader)
+        fragmentShader(fragmentShader),
+        descriptorSetLayouts(descriptorSetLayouts)
     {
         const VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo =
         {
@@ -53,7 +55,7 @@ public:
         };
 
         this->vertexInputStateCreateInfo = vertexInputStateCreateInfo;
-        initializePipeline(renderPass, swapChainExtent);
+        initializePipeline(renderPass, swapChainExtent, descriptorSetLayouts);
     }
 
     ~VulkanPipeline()
@@ -69,7 +71,7 @@ public:
 
     void reloadPipeline(VkRenderPass renderPass, const VkExtent2D& swapChainExtent)
     {
-        initializePipeline(renderPass, swapChainExtent);
+        initializePipeline(renderPass, swapChainExtent, descriptorSetLayouts);
     }
 
     VkDevice getDevice() const
@@ -104,8 +106,10 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 
-    void initializePipeline(VkRenderPass renderPass, const VkExtent2D& swapChainExtent)
+    void initializePipeline(VkRenderPass renderPass, const VkExtent2D& swapChainExtent,
+        const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts)
     {
         const VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo =
         {
@@ -226,8 +230,8 @@ private:
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             nullptr,
             0,
-            0,
-            nullptr,
+            static_cast<uint32_t>(descriptorSetLayouts.size()),
+            descriptorSetLayouts.data(),
             0,
             0
         };

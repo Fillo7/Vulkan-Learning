@@ -1,17 +1,23 @@
-// Core headers
+// Standard library headers
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 
-// Library headers
+// Additional library headers
 #include "SDL2/SDL.h"
 #include "vulkan/vulkan.h"
+#define GLM_FORCE_RADIANS
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 // Project headers
 #include "common/sdl_instance.h"
 #include "common/sdl_window.h"
+#include "common/uniform_buffer_object.h"
 #include "common/vertex.h"
 #include "common/vulkan_buffer.h"
 #include "common/vulkan_command_buffer_group.h"
+#include "common/vulkan_descriptor_set_layout.h"
 #include "common/vulkan_device.h"
 #include "common/vulkan_framebuffer_group.h"
 #include "common/vulkan_instance.h"
@@ -32,6 +38,22 @@ void draw(VulkanLearning::VulkanDevice& device, VulkanLearning::VulkanSwapChain&
     device.queueSubmit(commandBuffers.getCommandBuffers().at(imageIndex), imageReadySemaphore.getSemaphore(),
         renderFinishedSemaphore.getSemaphore());
     device.queuePresent(swapChain.getSwapChain(), renderFinishedSemaphore.getSemaphore(), imageIndex);
+}
+
+void updateUniformBuffer(VulkanLearning::VulkanBuffer& uniformBuffer, const VkExtent2D& swapChainExtent)
+{
+    auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    VulkanLearning::UniformBufferObject ubo;;
+    ubo.setModel(glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+    ubo.setView(glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), swapChainExtent.width / static_cast<float>(swapChainExtent.height), 0.1f, 10.0f);
+    projection[1][1] *= -1; // Y coordinate of clip coordinates is inverted (OpenGL design)
+    ubo.setProjection(projection);
+
+    uniformBuffer.uploadData(&ubo, sizeof(ubo));
 }
 
 int main(int argc, char* argv[])
@@ -69,9 +91,10 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanShaderModule vertexShader(device.getDevice(), "part1_vert.spv");
     VulkanLearning::VulkanShaderModule fragmentShader(device.getDevice(), "part1_frag.spv");
     VulkanLearning::VulkanRenderPass renderPass(device.getDevice(), swapChain.getSurfaceFormat().format);
+    VulkanLearning::VulkanDescriptorSetLayout setLayout(device.getDevice());
     VulkanLearning::VulkanPipeline graphicsPipeline(device.getDevice(), renderPass.getRenderPass(), vertexShader.getShaderModule(),
         fragmentShader.getShaderModule(), swapChain.getExtent(), vertices.at(0).getVertexInputBindingDescription(),
-        vertices.at(0).getVertexInputAttributeDescriptions());
+        vertices.at(0).getVertexInputAttributeDescriptions(), {setLayout.getDescriptorSetLayout()});
     VulkanLearning::VulkanFramebufferGroup framebuffers(device.getDevice(), renderPass.getRenderPass(), swapChain.getExtent(),
         swapChain.getImageViews());
     VulkanLearning::VulkanCommandBufferGroup commandBuffers(device.getDevice(), device.getQueueFamilyIndex(),
@@ -113,6 +136,11 @@ int main(int argc, char* argv[])
         indexTransferCommand.getCommandBuffers().at(0));
     device.queueSubmit(indexTransferCommand.getCommandBuffers().at(0));
     stagingIndexBuffer.destroyBuffer();
+
+    // Create uniform buffer
+    VulkanLearning::VulkanBuffer uniformBuffer(device.getDevice(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(VulkanLearning::UniformBufferObject));
+    uniformBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(uniformBuffer.getMemoryRequirements().memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 
     framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()},
         indexBuffer.getBuffer(), vertexIndices.size(), {0}, vertices.size());
@@ -159,6 +187,7 @@ int main(int argc, char* argv[])
         }
 
         draw(device, swapChain, commandBuffers);
+        updateUniformBuffer(uniformBuffer, swapChain.getExtent());
     }
 
     return 0;
