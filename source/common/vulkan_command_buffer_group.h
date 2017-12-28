@@ -11,32 +11,13 @@ namespace VulkanLearning
 class VulkanCommandBufferGroup
 {
 public:
-    explicit VulkanCommandBufferGroup(VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount) :
-        VulkanCommandBufferGroup(device, queueFamilyIndex, commandBufferCount, 0)
-    {}
-
-    explicit VulkanCommandBufferGroup(VkDevice device, const uint32_t queueFamilyIndex, const uint32_t commandBufferCount,
-        const VkCommandPoolCreateFlags commandPoolCreateFlags) :
+    explicit VulkanCommandBufferGroup(VkDevice device, VkCommandPool commandPool, const uint32_t commandBufferCount) :
         device(device),
-        commandBufferCount(commandBufferCount),
-        commandPoolCreateFlags(commandPoolCreateFlags)
+        commandPool(commandPool),
+        commandBufferCount(commandBufferCount)
     {
-        const VkCommandPoolCreateInfo commandPoolCreateInfo =
-        {
-            VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            nullptr,
-            commandPoolCreateFlags,
-            queueFamilyIndex
-        };
-
-        checkVulkanError(vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool), "vkCreateCommandPool");
         commandBuffers.resize(commandBufferCount);
         allocateCommandBuffers();
-    }
-
-    ~VulkanCommandBufferGroup()
-    {
-        vkDestroyCommandPool(device, commandPool, nullptr);
     }
 
     void destroyCommandBuffers()
@@ -53,20 +34,15 @@ public:
     {
         return device;
     }
+    
+    VkCommandPool getCommandPool() const
+    {
+        return commandPool;
+    }
 
     uint32_t getCommandBufferCount() const
     {
         return commandBufferCount;
-    }
-
-    VkCommandPoolCreateFlags getCommandPoolCreateFlags() const
-    {
-        return commandPoolCreateFlags;
-    }
-
-    VkCommandPool getCommandPool() const
-    {
-        return commandPool;
     }
 
     std::vector<VkCommandBuffer> getCommandBuffers() const
@@ -76,9 +52,8 @@ public:
 
 private:
     VkDevice device;
-    uint32_t commandBufferCount;
-    VkCommandPoolCreateFlags commandPoolCreateFlags;
     VkCommandPool commandPool;
+    uint32_t commandBufferCount;
     std::vector<VkCommandBuffer> commandBuffers;
 
     void allocateCommandBuffers()

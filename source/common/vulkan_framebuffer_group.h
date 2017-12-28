@@ -41,7 +41,7 @@ public:
         initializeFramebufferGroup(imageViews);
     }
 
-    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, const VkPipeline pipeline, const std::vector<VkBuffer>& vertexBuffers,
+    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, VkPipeline pipeline, const std::vector<VkBuffer>& vertexBuffers,
         const std::vector<VkDeviceSize>& offsets, const size_t numberOfVertices)
     {
         for (size_t i = 0; i < commandBuffers.size(); i++)
@@ -88,8 +88,8 @@ public:
         }
     }
 
-    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, const VkPipeline pipeline, const std::vector<VkBuffer>& vertexBuffers,
-        const VkBuffer& indexBuffer, const size_t indexCount, const std::vector<VkDeviceSize>& offsets, const size_t numberOfVertices)
+    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, VkPipeline pipeline, const std::vector<VkBuffer>& vertexBuffers,
+        VkBuffer indexBuffer, const size_t indexCount, const std::vector<VkDeviceSize>& offsets, const size_t numberOfVertices)
     {
         for (size_t i = 0; i < commandBuffers.size(); i++)
         {
@@ -102,7 +102,6 @@ public:
             };
 
             checkVulkanError(vkBeginCommandBuffer(commandBuffers.at(i), &commandBufferBeginInfo), "vkBeginCommandBuffer");
-
             VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
             const VkRenderPassBeginInfo renderPassBeginInfo =
@@ -122,6 +121,55 @@ public:
 
             vkCmdBeginRenderPass(commandBuffers.at(i), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(commandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+            if (vertexBuffers.size() > 0)
+            {
+                vkCmdBindVertexBuffers(commandBuffers.at(i), 0, static_cast<uint32_t>(vertexBuffers.size()), vertexBuffers.data(), offsets.data());
+            }
+
+            vkCmdBindIndexBuffer(commandBuffers.at(i), indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+            vkCmdDrawIndexed(commandBuffers.at(i), static_cast<uint32_t>(indexCount), 1, 0, 0, 0);
+
+            vkCmdEndRenderPass(commandBuffers.at(i));
+            checkVulkanError(vkEndCommandBuffer(commandBuffers.at(i)), "vkEndCommandBuffer");
+        }
+    }
+
+    void beginRenderPass(const std::vector<VkCommandBuffer>& commandBuffers, VkPipeline pipeline, const std::vector<VkBuffer>& vertexBuffers,
+        VkBuffer indexBuffer, const size_t indexCount, const std::vector<VkDeviceSize>& offsets, const size_t numberOfVertices,
+        VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet)
+    {
+        for (size_t i = 0; i < commandBuffers.size(); i++)
+        {
+            const VkCommandBufferBeginInfo commandBufferBeginInfo =
+            {
+                VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                nullptr,
+                VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+                nullptr
+            };
+
+            checkVulkanError(vkBeginCommandBuffer(commandBuffers.at(i), &commandBufferBeginInfo), "vkBeginCommandBuffer");
+            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+
+            const VkRenderPassBeginInfo renderPassBeginInfo =
+            {
+                VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                nullptr,
+                renderPass,
+                framebuffers.at(i),
+                VkRect2D
+                {
+                    {0, 0},
+                    extent
+                },
+                1,
+                &clearColor
+            };
+
+            vkCmdBeginRenderPass(commandBuffers.at(i), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(commandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+            vkCmdBindDescriptorSets(commandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
             if (vertexBuffers.size() > 0)
             {

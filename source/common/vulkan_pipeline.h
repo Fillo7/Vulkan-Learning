@@ -180,7 +180,7 @@ private:
             VK_FALSE,
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
-            VK_FRONT_FACE_CLOCKWISE,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
             VK_FALSE,
             0.0f,
             0.0f,
@@ -222,7 +222,7 @@ private:
             VK_LOGIC_OP_COPY,
             1,
             &colorBlendAttachmentState,
-            { 0.0f, 0.0f, 0.0f, 0.0f}
+            {0.0f, 0.0f, 0.0f, 0.0f}
         };
 
         const VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo =
