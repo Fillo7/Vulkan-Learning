@@ -5,8 +5,8 @@ function setupVulkan()
         return false
     end
     
-    includedirs { "$(VULKAN_SDK)/Include", "$(VULKAN_SDK)/Third-Party/Include" }
-    libdirs { "$(VULKAN_SDK)/Lib", "$(VULKAN_SDK)/Third-Party/Bin" }
+    includedirs { "$(VULKAN_SDK)/Include", "libraries/include" }
+    libdirs { "$(VULKAN_SDK)/Lib", "libraries/binaries" }
     links { "vulkan-1", "SDL2", "SDL2main" }
     
     return true
@@ -32,9 +32,9 @@ workspace "VulkanLearning"
     filter {}
 
 -- Project configuration
-project "Part1"
+project "Demo"
     kind "ConsoleApp"
-    files { "source/common/*.h", "source/common/*.cpp", "source/part1/*.h", "source/part1/*.cpp", "source/part1/*.frag", "source/part1/*.vert" }
+    files { "source/framework/*.h", "source/framework/*.cpp", "source/demo/*.h", "source/demo/*.cpp", "source/demo/*.frag", "source/demo/*.vert" }
     includedirs { "source" }
 
     vulkan = setupVulkan() 
