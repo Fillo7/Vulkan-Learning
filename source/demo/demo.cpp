@@ -11,6 +11,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 // Project headers
+#include "framework/image.h"
 #include "framework/sdl_instance.h"
 #include "framework/sdl_window.h"
 #include "framework/uniform_buffer_object.h"
@@ -148,6 +149,13 @@ int main(int argc, char* argv[])
     VulkanLearning::VulkanDescriptorSetGroup descriptorSets(device.getDevice(), setLayout.getDescriptorSetLayout(),
         descriptorPool.getDescriptorPool(), 1);
     descriptorSets.attachUniformBuffer(uniformBuffer.getBuffer(), sizeof(VulkanLearning::UniformBufferObject));
+
+    // Load texture image
+    VulkanLearning::Image texture("texture.jpg");
+    VulkanLearning::VulkanBuffer stagingImageBuffer(device.getDevice(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, texture.getImageSize());
+    stagingImageBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(stagingImageBuffer.getMemoryRequirements().memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    stagingImageBuffer.uploadData(texture.getImage(), texture.getImageSize());
 
     framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()},
         indexBuffer.getBuffer(), vertexIndices.size(), {0}, vertices.size(), graphicsPipeline.getPipelineLayout(),
