@@ -13,6 +13,11 @@ public:
     Image(const std::string& fileName)
     {
         image = stbi_load(fileName.c_str(), &width, &height, &channelCount, STBI_rgb_alpha);
+
+        if (!image)
+        {
+            throw std::runtime_error(std::string("Unable to load image: ") + fileName);
+        }
     }
 
     ~Image()
