@@ -24,6 +24,7 @@
 #include "framework/vulkan_descriptor_set_layout.h"
 #include "framework/vulkan_device.h"
 #include "framework/vulkan_framebuffer_group.h"
+#include "framework/vulkan_image.h"
 #include "framework/vulkan_instance.h"
 #include "framework/vulkan_pipeline.h"
 #include "framework/vulkan_render_pass.h"
@@ -156,6 +157,10 @@ int main(int argc, char* argv[])
     stagingImageBuffer.allocateMemory(device.getSuitableMemoryTypeIndex(stagingImageBuffer.getMemoryRequirements().memoryTypeBits,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
     stagingImageBuffer.uploadData(texture.getImage(), texture.getImageSize());
+    VulkanLearning::VulkanImage textureImage(device.getDevice(), VkExtent3D{static_cast<uint32_t>(texture.getWidth()),
+        static_cast<uint32_t>(texture.getHeight()), 1});
+    textureImage.allocateMemory(device.getSuitableMemoryTypeIndex(textureImage.getMemoryRequirements().memoryTypeBits,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
     framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()},
         indexBuffer.getBuffer(), vertexIndices.size(), {0}, vertices.size(), graphicsPipeline.getPipelineLayout(),
