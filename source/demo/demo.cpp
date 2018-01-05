@@ -161,6 +161,15 @@ int main(int argc, char* argv[])
         static_cast<uint32_t>(texture.getHeight()), 1});
     textureImage.allocateMemory(device.getSuitableMemoryTypeIndex(textureImage.getMemoryRequirements().memoryTypeBits,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+    VulkanLearning::VulkanCommandBufferGroup imageTransitionCommand(device.getDevice(), transferCommandPool.getCommandPool(), 1);
+    textureImage.transitionLayout(imageTransitionCommand.getCommandBuffers().at(0), device.getQueue(), VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VulkanLearning::VulkanCommandBufferGroup imageUploadCommand(device.getDevice(), transferCommandPool.getCommandPool(), 1);
+    textureImage.uploadImage(imageUploadCommand.getCommandBuffers().at(0), stagingImageBuffer.getBuffer(),
+        static_cast<uint32_t>(texture.getWidth()), static_cast<uint32_t>(texture.getHeight()));
+    VulkanLearning::VulkanCommandBufferGroup imageSecondTransitionCommand(device.getDevice(), transferCommandPool.getCommandPool(), 1);
+    textureImage.transitionLayout(imageSecondTransitionCommand.getCommandBuffers().at(0), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     framebuffers.beginRenderPass(commandBuffers.getCommandBuffers(), graphicsPipeline.getPipeline(), {vertexBuffer.getBuffer()},
         indexBuffer.getBuffer(), vertexIndices.size(), {0}, vertices.size(), graphicsPipeline.getPipelineLayout(),

@@ -72,6 +72,47 @@ public:
         memoryAllocated = true;
     }
 
+    void uploadImage(VkCommandBuffer commandBuffer, VkBuffer sourceBuffer, uint32_t imageWidth, uint32_t imageHeight)
+    {
+        const VkCommandBufferBeginInfo commandBufferBeginInfo =
+        {
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            nullptr,
+            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            nullptr
+        };
+
+        const VkBufferImageCopy copyRegion =
+        {
+            0,
+            0,
+            0,
+            VkImageSubresourceLayers
+            {
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                0,
+                0,
+                1
+            },
+            VkOffset3D
+            {
+                0,
+                0,
+                0
+            },
+            VkExtent3D
+            {
+                imageWidth,
+                imageHeight,
+                1
+            }
+        };
+
+        checkVulkanError(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo), "vkBeginCommandBuffer");
+        vkCmdCopyBufferToImage(commandBuffer, sourceBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+        checkVulkanError(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");
+    }
+
     void transitionLayout(VkCommandBuffer commandBuffer, VkQueue queue, const VkImageLayout oldLayout, const VkImageLayout newLayout)
     {
         const VkCommandBufferBeginInfo commandBufferBeginInfo =
@@ -96,12 +137,55 @@ public:
         };
 
         checkVulkanError(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo), "vkBeginCommandBuffer");
-        vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(queue);
+        
+        VkImageMemoryBarrier barrier =
+        {
+            VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            nullptr,
+            0,
+            0,
+            oldLayout,
+            newLayout,
+            VK_QUEUE_FAMILY_IGNORED,
+            VK_QUEUE_FAMILY_IGNORED,
+            image,
+            VkImageSubresourceRange
+            {
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                0,
+                1,
+                0,
+                1
+            }
+        };
 
-        // to do
+        VkPipelineStageFlags sourceStage;
+        VkPipelineStageFlags destinationStage;
+
+        if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+        else
+        {
+            throw std::invalid_argument("Unsupported image layout transition");
+        }
+
+        vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
         checkVulkanError(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");
+        vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(queue);
     }
 
     VkDevice getDevice() const
