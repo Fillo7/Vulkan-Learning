@@ -31,10 +31,10 @@ public:
             VK_STRUCTURE_TYPE_APPLICATION_INFO,
             nullptr,
             applicationName.c_str(),
-            0,
+            VK_MAKE_VERSION(0, 1, 0),
             "",
-            0,
-            VK_MAKE_VERSION(1, 0, 65)
+            VK_MAKE_VERSION(0, 0, 0),
+            VK_API_VERSION_1_0
         };
 
         const VkInstanceCreateInfo instanceCreateInfo =

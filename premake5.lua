@@ -5,8 +5,8 @@ function setupVulkan()
         return false
     end
     
-    includedirs { "$(VULKAN_SDK)/Include", "libraries/include" }
-    libdirs { "$(VULKAN_SDK)/Lib", "libraries/binaries" }
+    includedirs { "$(VULKAN_SDK)/Include", "$(VULKAN_SDK)/Third-Party/Include", "libraries" }
+    libdirs { "$(VULKAN_SDK)/Lib", "$(VULKAN_SDK)/Third-Party/Bin" }
     links { "vulkan-1", "SDL2", "SDL2main" }
     
     return true
